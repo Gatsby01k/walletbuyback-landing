@@ -1,56 +1,63 @@
-import React, {useEffect, useRef, useState} from "react"
+// src/components/ui/select.jsx
+import React, {createContext, useContext, useEffect, useMemo, useRef, useState} from "react"
+import ReactDOM from "react-dom"
+
+const Ctx = createContext(null)
 
 export function Select({ value, onValueChange, children }) {
-  // просто обёртка для совместимости
-  return <div data-select-root>{React.Children.only(children)}</div>
+  const [open, setOpen] = useState(false)
+  const anchorRef = useRef(null)
+  const [label, setLabel] = useState(null) // подпись выбранного пункта
+
+  // если value меняется извне — не сбрасываем label насильно
+
+  const ctx = useMemo(() => ({
+    open, setOpen,
+    value, onValueChange,
+    anchorRef,
+    label, setLabel,
+  }), [open, value, onValueChange, label])
+
+  return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>
 }
 
-export function SelectTrigger({ className = "", children, onClick, ...props }) {
+export const SelectTrigger = React.forwardRef(function SelectTrigger(
+  { className = "", children, ...props },
+  ref
+) {
+  const { open, setOpen, anchorRef } = useContext(Ctx) || {}
+  const mergedRef = useMergedRefs(anchorRef, ref)
   return (
     <button
       type="button"
+      ref={mergedRef}
+      onClick={() => setOpen && setOpen(!open)}
       className={`w-full text-left ${className}`}
-      onClick={onClick}
       {...props}
     >
       {children}
     </button>
   )
+})
+
+export function SelectValue({ placeholder }) {
+  const { label } = useContext(Ctx) || {}
+  return <div className="text-sm py-2 px-3">{label || placeholder}</div>
 }
 
-export function SelectValue({ placeholder, valueLabel }) {
-  return (
-    <div className="text-sm py-2 px-3">
-      {valueLabel || placeholder}
-    </div>
-  )
-}
-
-/**
- * Портал для контента, чтобы меню не ломало верстку карточки
- */
-function Portal({ children }) {
-  const ref = useRef(null)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
-  if (!mounted) return null
-  if (!ref.current) ref.current = document.body
-  return React.createPortal(children, ref.current)
-}
-
-export function SelectContent({ className = "", anchorRef, open, onClose, children }) {
+export function SelectContent({ className = "", children }) {
+  const { open, setOpen, anchorRef } = useContext(Ctx) || {}
   const contentRef = useRef(null)
 
   useEffect(() => {
     function onDocClick(e) {
       if (!open) return
-      if (!contentRef.current) return
       if (anchorRef?.current?.contains?.(e.target)) return
-      if (!contentRef.current.contains(e.target)) onClose?.()
+      if (contentRef.current && !contentRef.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener("mousedown", onDocClick)
     return () => document.removeEventListener("mousedown", onDocClick)
-  }, [open, onClose, anchorRef])
+  }, [open, setOpen, anchorRef])
 
   if (!open || !anchorRef?.current) return null
 
@@ -63,21 +70,30 @@ export function SelectContent({ className = "", anchorRef, open, onClose, childr
     zIndex: 50,
   }
 
-  return (
-    <Portal>
-      <div ref={contentRef} style={style}
-           className={`rounded-md shadow-lg border bg-white dark:bg-[#0b1020] dark:border-white/10 ${className}`}>
-        {children}
-      </div>
-    </Portal>
+  return ReactDOM.createPortal(
+    <div
+      ref={contentRef}
+      style={style}
+      className={`rounded-md shadow-lg border bg-white dark:bg-[#0b1020] dark:border-white/10 ${className}`}
+    >
+      {children}
+    </div>,
+    document.body
   )
 }
 
-export function SelectItem({ value, children, onSelect }) {
+export function SelectItem({ value, children }) {
+  const { onValueChange, setOpen, setLabel } = useContext(Ctx) || {}
   return (
     <div
       role="option"
-      onClick={() => onSelect?.(value)}
+      onClick={() => {
+        onValueChange && onValueChange(value)
+        // сохраним подпись выбранного пункта для SelectValue
+        const text = typeof children === "string" ? children : getText(children)
+        setLabel && setLabel(text)
+        setOpen && setOpen(false)
+      }}
       className="px-3 py-2 text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
     >
       {children}
@@ -85,35 +101,18 @@ export function SelectItem({ value, children, onSelect }) {
   )
 }
 
-/** Удобная «сборка» под твоё использование в App.tsx */
-export function ControlledSelect({ value, onValueChange, options = [], placeholder = "Выберите сеть", className = "" }) {
-  const [open, setOpen] = useState(false)
-  const btnRef = useRef(null)
-  const current = options.find(o => o.value === value)
-
-  return (
-    <div className="relative">
-      <Select>
-        <SelectTrigger
-          ref={btnRef}
-          onClick={() => setOpen(v => !v)}
-          className={`w-full ${className}`}
-        >
-          <div className="w-full px-3 py-2 text-sm rounded-xl border dark:border-white/10 border-gray-300 bg-white dark:bg-[#0b1020]">
-            {current?.label || placeholder}
-          </div>
-        </SelectTrigger>
-
-        <SelectContent open={open} onClose={() => setOpen(false)} anchorRef={btnRef}>
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value} onSelect={(v) => { onValueChange?.(v); setOpen(false) }}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
+/* ---------- утилиты ---------- */
+function useMergedRefs(...refs) {
+  return (node) => refs.forEach(r => {
+    if (!r) return
+    if (typeof r === "function") r(node)
+    else r.current = node
+  })
 }
 
-export default ControlledSelect
+function getText(node) {
+  if (typeof node === "string") return node
+  if (Array.isArray(node)) return node.map(getText).join("")
+  if (node && node.props && node.props.children) return getText(node.props.children)
+  return ""
+}

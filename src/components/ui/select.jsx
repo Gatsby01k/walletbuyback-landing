@@ -7,9 +7,7 @@ const Ctx = createContext(null)
 export function Select({ value, onValueChange, children }) {
   const [open, setOpen] = useState(false)
   const anchorRef = useRef(null)
-  const [label, setLabel] = useState(null) // подпись выбранного пункта
-
-  // если value меняется извне — не сбрасываем label насильно
+  const [label, setLabel] = useState(null)
 
   const ctx = useMemo(() => ({
     open, setOpen,
@@ -42,7 +40,11 @@ export const SelectTrigger = React.forwardRef(function SelectTrigger(
 
 export function SelectValue({ placeholder }) {
   const { label } = useContext(Ctx) || {}
-  return <div className="text-sm py-2 px-3">{label || placeholder}</div>
+  return (
+    <div className="text-sm py-2 px-3">
+      {label || placeholder}
+    </div>
+  )
 }
 
 export function SelectContent({ className = "", children }) {
@@ -67,16 +69,23 @@ export function SelectContent({ className = "", children }) {
     top: r.bottom + window.scrollY + 6,
     left: r.left + window.scrollX,
     width: r.width,
-    zIndex: 50,
+    zIndex: 1000,
   }
 
   return ReactDOM.createPortal(
     <div
       ref={contentRef}
       style={style}
-      className={`rounded-md shadow-lg border bg-white dark:bg-[#0b1020] dark:border-white/10 ${className}`}
+      className={
+        // фон + тени + скролл + нормальные цвета текста
+        "rounded-xl shadow-2xl border " +
+        "bg-white text-gray-900 " +
+        "dark:bg-[#0b1020] dark:text-gray-100 dark:border-white/10 " +
+        "max-h-[280px] overflow-y-auto " + className
+      }
+      role="listbox"
     >
-      {children}
+      <div className="py-1">{children}</div>
     </div>,
     document.body
   )
@@ -89,12 +98,15 @@ export function SelectItem({ value, children }) {
       role="option"
       onClick={() => {
         onValueChange && onValueChange(value)
-        // сохраним подпись выбранного пункта для SelectValue
         const text = typeof children === "string" ? children : getText(children)
         setLabel && setLabel(text)
         setOpen && setOpen(false)
       }}
-      className="px-3 py-2 text-sm cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
+      className={
+        "px-3 py-2 text-sm cursor-pointer " +
+        "hover:bg-black/5 dark:hover:bg-white/10 " +
+        "text-gray-900 dark:text-gray-100"
+      }
     >
       {children}
     </div>
@@ -109,10 +121,10 @@ function useMergedRefs(...refs) {
     else r.current = node
   })
 }
-
 function getText(node) {
   if (typeof node === "string") return node
   if (Array.isArray(node)) return node.map(getText).join("")
   if (node && node.props && node.props.children) return getText(node.props.children)
   return ""
 }
+export default Select

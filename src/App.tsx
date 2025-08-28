@@ -24,7 +24,6 @@ export function computeCanSubmit(address: unknown, contact: unknown, agree: unkn
 /**
  * Tiny test runner for the computeCanSubmit function.
  * These are basic UI-level tests and will log to the console.
- * NOTE: Original five cases preserved; additional cases appended for coverage.
  */
 function runTests() {
   type T = { name: string; address: any; contact: any; agree: any; expect: boolean };
@@ -35,12 +34,10 @@ function runTests() {
     { name: "not agreed => false", address: "0x12345678", contact: "@user", agree: false, expect: false },
     { name: "valid => true", address: "0x1234567890", contact: "@user", agree: true, expect: true },
   ];
-  // Additional tests (do not modify the originals above)
   const more: T[] = [
     { name: "address with spaces => true", address: "   0x12345678   ", contact: "tg:@user", agree: true, expect: true },
     { name: "contact only spaces => false", address: "0xabcdef123456", contact: "   ", agree: true, expect: false },
     { name: "agree false despite valid fields => false", address: "0xabcdef123456", contact: "+1-202-555", agree: false, expect: false },
-    // New edge cases for robustness
     { name: "address undefined => false (guarded)", address: undefined, contact: "@u", agree: true, expect: false },
     { name: "contact null => false (guarded)", address: "0x12345678", contact: null, agree: true, expect: false },
     { name: "agree as truthy string => true (coerced)", address: "0x12345678", contact: "@u", agree: "yes", expect: true },
@@ -61,8 +58,7 @@ function runTests() {
 }
 
 if (typeof window !== "undefined") {
-  // Run once in the browser for quick feedback during dev preview
-  try { runTests(); } catch (e) { /* no-op */ }
+  try { runTests(); } catch {}
 }
 
 /** BRAND COLORS & SVG PATHS **/
@@ -70,7 +66,7 @@ const BRAND_COLORS = { metamask: "#F6851B", phantom: "#5341F5", trust: "#3375BB"
 const BRAND_SVGS = {
   metamask: "/MetaMask-icon-fox.svg",
   phantom: "/Phantom_SVG_Icon.svg",
-  trust: "/Trust_Stacked Logo_Blue.svg", // space preserved
+  trust: "/Trust_Stacked Logo_Blue.svg",
 } as const;
 
 /** CRYPTO BACKGROUND with Parallax **/
@@ -86,12 +82,9 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-      {/* soft radial glows with parallax */}
       <motion.div style={{ y: yGlows }} className={`absolute -top-40 -left-40 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-35 ${glowTeal}`} />
       <motion.div style={{ y: yGlows }} className={`absolute top-1/3 -right-40 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-35 ${glowSky}`} />
       <motion.div style={{ y: yGlows }} className={`absolute bottom-[-10rem] left-1/4 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-35 ${glowAmber}`} />
-
-      {/* dotted grid */}
       <motion.svg style={{ y: yGrid }} className="absolute inset-0 w-full h-full opacity-10 md:opacity-20" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
@@ -100,8 +93,6 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
       </motion.svg>
-
-      {/* noise / grain overlay */}
       <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.03] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:6px_6px]" />
     </div>
   );
@@ -150,8 +141,8 @@ function TiltCard({ children, className = '', enabled = true }: { children: Reac
     const r = el.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width; // 0..1
     const py = (e.clientY - r.top) / r.height;
-    ry.set((px - 0.5) * 14); // rotateY: left/right
-    rx.set(-(py - 0.5) * 14); // rotateX: up/down
+    ry.set((px - 0.5) * 14);
+    rx.set(-(py - 0.5) * 14);
   }
   function onLeave() { rx.set(0); ry.set(0); }
   if (!enabled) return <div className={className}>{children}</div>;
@@ -178,7 +169,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-/** Single-line ticker rail (awwwards-style) **/
+/** Single-line ticker rail **/
 function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean; duration?: number; enabled?: boolean }) {
   const items = [
     { label: '+$5,000', unit: 'USDT', color: '#26A17B' },
@@ -251,7 +242,6 @@ function ScrollCue() {
 }
 
 export default function App() {
-  // THEME (persisted), motion & responsive flags
   const prm = useReducedMotion();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   useEffect(() => {
@@ -265,7 +255,6 @@ export default function App() {
   }, [theme]);
   const isDark = theme === "dark";
 
-  // silence benign ResizeObserver errors
   useEffect(() => {
     const handler = (e: ErrorEvent) => {
       const msg = e.message || '';
@@ -282,7 +271,6 @@ export default function App() {
     const mq = window.matchMedia('(max-width: 768px)');
     const onChange = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile((e as MediaQueryList).matches ?? (e as MediaQueryListEvent).matches);
     setIsMobile(mq.matches);
-    // Safari support
     // @ts-ignore
     mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
     return () => {
@@ -310,7 +298,6 @@ export default function App() {
     setSubmitted(true);
   };
 
-  // theme-aware classes
   const rootClass = isDark ? "relative min-h-screen bg-gradient-to-br from-[#0b1020] via-[#0a0f1a] to-black text-gray-100" : "relative min-h-screen bg-white text-gray-900";
   const headerClass = isDark ? "sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f1a]/80 border-b border-gray-800" : "sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-gray-200";
   const brandAccent = isDark ? "text-teal-300" : "text-teal-600";
@@ -321,7 +308,6 @@ export default function App() {
   const labelColor = isDark ? "text-gray-200" : "text-gray-800";
   const fineText = isDark ? "text-gray-400" : "text-gray-600";
 
-  // close wallet menu on outside click
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -360,7 +346,6 @@ export default function App() {
                 <a href="#form" className="hover:opacity-80 transition">Оценить адрес</a>
               </nav>
 
-              {/* Wallet menu (desktop) */}
               {walletMenuOpen && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className={`absolute top-12 right-24 hidden md:grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${isDark ? 'bg-[#0b1020]/95 border border-white/10' : 'bg-white border border-gray-200'}`}>
@@ -371,7 +356,7 @@ export default function App() {
                   ].map((w) => (
                     <div key={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className={`rounded-xl p-3 flex items-center gap-2 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
                       <div className="h-8 w-8 grid place-items-center rounded-lg" style={{ backgroundColor: w.color + '22' }}>
-                        <img src={w.src} alt={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className="h-5 w-5 object-contain" />
+                        <img src={w.src} alt={w.name} className="h-5 w-5 object-contain" />
                       </div>
                       <div>
                         <div className="text-sm font-medium" style={{ color: w.color }}>{w.name}</div>
@@ -394,7 +379,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Always-visible ticker */}
+        {/* Ticker */}
         <TickerRail isDark={isDark} duration={isMobile ? 28 : 22} enabled={!prm} />
 
         {/* HERO */}
@@ -418,20 +403,18 @@ export default function App() {
                 <Reveal delay={0.15}>и <motion.span whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.trust}` }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} style={{ color: BRAND_COLORS.trust }}>Trust Wallet</motion.span></Reveal>
               </h1>
 
-              {/* Brand chips */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
                   {[{ name: 'MetaMask', color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask }, { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom }, { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust }].map((w, i) => (
                     <motion.div
                       key={w.name}
-                      data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium shadow cursor-interactive`}
                       style={{ backgroundColor: w.color, boxShadow: `0 0 22px ${w.color}66` }}
                       animate={enableFancy ? { y: [0, -3, 0] } : undefined}
                       transition={{ duration: 4, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
                       whileHover={enableFancy ? { scale: 1.05, rotate: 0.4 } : undefined}
                     >
-                      <img src={w.src} alt={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className="h-4 w-4 object-contain drop-shadow" />
+                      <img src={w.src} alt={w.name} className="h-4 w-4 object-contain drop-shadow" />
                       {w.name}
                     </motion.div>
                   ))}
@@ -557,34 +540,14 @@ export default function App() {
         <section id="features" className="mx-auto max-w-7xl px-4 pb-8 md:pb-16">
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              {
-                icon: <ShieldCheck className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
-                title: "Прозрачность",
-                text: "Оцениваем только публичную ончейн-историю. Никаких приватных данных.",
-              },
-              {
-                icon: <Wallet className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
-                title: "Поддержка популярных сетей",
-                text: "MetaMask, Phantom, Trust Wallet и др.",
-              },
-              {
-                icon: <Coins className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
-                title: "Быстрые выплаты",
-                text: "USDT, USDC, BTC, ETH или локальная валюта.",
-              },
+              { icon: <ShieldCheck className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />, title: "Прозрачность", text: "Оцениваем только публичную ончейн-историю. Никаких приватных данных." },
+              { icon: <Wallet className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />, title: "Поддержка популярных сетей", text: "MetaMask, Phantom, Trust Wallet и др." },
+              { icon: <Coins className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />, title: "Быстрые выплаты", text: "USDT, USDC, BTC, ETH или локальная валюта." },
             ].map((f, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.4, delay: 0.05 * i }}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.4, delay: 0.05 * i }}>
                 <Card className={`${cardChrome} rounded-3xl shadow-sm`}>
                   <CardContent className="p-6">
-                    <div className={`h-10 w-10 rounded-xl grid place-items-center mb-4 ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
-                      {f.icon}
-                    </div>
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center mb-4 ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>{f.icon}</div>
                     <h3 className="text-lg mb-2">{f.title}</h3>
                     <p className={`text-sm leading-relaxed ${fineText}`}>{f.text}</p>
                   </CardContent>
@@ -594,9 +557,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* HOW IT WORKS — Awwwards-style */}
+        {/* HOW IT WORKS — fixed numbers clipping */}
         <section id="how" className="mx-auto max-w-7xl px-4 py-20">
-          {/* decorative glow line */}
           <div className="relative hidden md:block mb-12">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
           </div>
@@ -615,29 +577,29 @@ export default function App() {
                 viewport={{ once: true, margin: "-10% 0px" }}
                 transition={{ duration: 0.45, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -4 }}
-                className={`group relative overflow-hidden rounded-3xl p-6 shadow-sm ${cardChrome}`}
+                className={`group relative overflow-visible rounded-3xl p-6 shadow-sm ${cardChrome}`}
               >
-                {/* hover glow */}
-                <div className="pointer-events-none absolute -inset-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: 'radial-gradient(80rem 80rem at 80% -10%, rgba(45,212,191,.12), transparent 60%)' }} />
-
-                {/* big step number */}
-                <div className="pointer-events-none absolute -top-6 -right-2 text-8xl font-black leading-none tracking-tighter text-white/5 select-none">
+                <div
+                  className="pointer-events-none absolute -inset-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: 'radial-gradient(70rem 70rem at 80% -10%, rgba(45,212,191,.12), transparent 60%)' }}
+                />
+                {/* big number not clipped */}
+                <div className="pointer-events-none absolute top-2 right-3 z-0 text-[64px] md:text-[88px] lg:text-[104px] font-black leading-[0.9] tracking-tighter text-white/10 select-none">
                   {s.num}
                 </div>
 
-                {/* header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
-                    {s.icon}
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
+                      {s.icon}
+                    </div>
+                    <span className={`text-xs uppercase tracking-wider ${fineText}`}>Шаг {s.num}</span>
                   </div>
-                  <span className={`text-xs uppercase tracking-wider ${fineText}`}>Шаг {s.num}</span>
+
+                  <h4 className="text-xl font-semibold mb-2">{s.title}</h4>
+                  <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
                 </div>
 
-                <h4 className="text-xl font-semibold mb-2">{s.title}</h4>
-                <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
-
-                {/* bottom neon line */}
                 <motion.span
                   className="absolute left-6 right-6 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-teal-400/80 to-transparent"
                   initial={{ scaleX: 0 }}
@@ -647,7 +609,6 @@ export default function App() {
                   style={{ transformOrigin: '0% 50%' }}
                 />
 
-                {/* connector to next card */}
                 {i < arr.length - 1 && (
                   <span className="hidden md:block absolute top-16 -right-3 w-6 h-px bg-white/10" />
                 )}
@@ -661,9 +622,7 @@ export default function App() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Отправьте адрес на оценку</h2>
-              <p className={`max-w-xl mb-6 ${fineText}`}>
-                Мы делаем оценку в течение 24–48 часов и связываемся по вашему контакту.
-              </p>
+              <p className={`max-w-xl mb-6 ${fineText}`}>Мы делаем оценку в течение 24–48 часов и связываемся по вашему контакту.</p>
               <ul className={`space-y-3 text-sm ${fineText}`}>
                 <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Не передавайте seed-фразы или приватные ключи.</li>
                 <li className="flex gap-2"><MessageSquare className="h-4 w-4 mt-0.5"/> Контакты: Telegram, WhatsApp, WeChat, Email.</li>
@@ -689,46 +648,22 @@ export default function App() {
               </div>
               <div className="grid gap-2">
                 <Label className={labelColor}>Адрес</Label>
-                <Input
-                  placeholder="0x… или адрес Solana/TON"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className={inputChrome}
-                />
+                <Input placeholder="0x… или адрес Solana/TON" value={address} onChange={(e) => setAddress(e.target.value)} className={inputChrome} />
               </div>
               <div className="grid gap-2">
                 <Label className={labelColor}>Контакт</Label>
-                <Input
-                  placeholder="@telegram / WhatsApp / Email"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  className={inputChrome}
-                />
+                <Input placeholder="@telegram / WhatsApp / Email" value={contact} onChange={(e) => setContact(e.target.value)} className={inputChrome} />
               </div>
               <div className="grid gap-2">
                 <Label className={labelColor}>Комментарий</Label>
-                <Textarea
-                  placeholder="Опишите активы (NFT, ENS и др.)"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className={`${inputChrome} min-h-[96px]`}
-                />
+                <Textarea placeholder="Опишите активы (NFT, ENS и др.)" value={note} onChange={(e) => setNote(e.target.value)} className={`${inputChrome} min-h-[96px]`} />
               </div>
               <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
-                <input
-                  type="checkbox"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
-                  className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`}
-                />
+                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`} />
                 <span>Я подтверждаю, что являюсь владельцем адреса и НЕ передаю seed-фразы/приватные ключи.</span>
               </label>
-              <Magnetic enabled={enableFancy}><Button type="submit" disabled={!computeCanSubmit(address, contact, agree)} className={buttonPrimary}>
-                <Send className="mr-2 h-4 w-4" /> Отправить
-              </Button></Magnetic>
-              {submitted && (
-                <div className={`${isDark ? 'text-teal-300' : 'text-teal-700'} text-sm`}>Заявка отправлена. Мы свяжемся с вами по указанному контакту.</div>
-              )}
+              <Magnetic enabled={enableFancy}><Button type="submit" disabled={!computeCanSubmit(address, contact, agree)} className={buttonPrimary}><Send className="mr-2 h-4 w-4" /> Отправить</Button></Magnetic>
+              {submitted && (<div className={`${isDark ? 'text-teal-300' : 'text-teal-700'} text-sm`}>Заявка отправлена. Мы свяжемся с вами по указанному контакту.</div>)}
             </form>
           </div>
         </section>
@@ -736,9 +671,7 @@ export default function App() {
         {/* FOOTER */}
         <footer className={`mt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-2 gap-6 items-center">
-            <p className={`text-xs ${fineText}`}>
-              © {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн-артефактов. Мы никогда не запрашиваем и не принимаем seed-фразы и приватные ключи.
-            </p>
+            <p className={`text-xs ${fineText}`}>© {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн-артефактов. Мы никогда не запрашиваем и не принимаем seed-фразы и приватные ключи.</p>
             <div className="flex justify-start md:justify-end gap-4 text-sm">
               <a href="#how" className="hover:opacity-80">Процесс</a>
               <a href="#features" className="hover:opacity-80">Возможности</a>

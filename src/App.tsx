@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 import { Wallet, Lock, ShieldCheck, MessageSquare, Send, Sparkles, Coins, Sun, Moon, ChevronDown, ChevronDownCircle } from "lucide-react";
@@ -69,7 +70,7 @@ const BRAND_COLORS = { metamask: "#F6851B", phantom: "#5341F5", trust: "#3375BB"
 const BRAND_SVGS = {
   metamask: "/MetaMask-icon-fox.svg",
   phantom: "/Phantom_SVG_Icon.svg",
-  trust: "/Trust_Stacked Logo_Blue.svg", // space encoded
+  trust: "/Trust_Stacked Logo_Blue.svg", // space preserved
 } as const;
 
 /** CRYPTO BACKGROUND with Parallax **/
@@ -90,7 +91,7 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
       <motion.div style={{ y: yGlows }} className={`absolute top-1/3 -right-40 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-35 ${glowSky}`} />
       <motion.div style={{ y: yGlows }} className={`absolute bottom-[-10rem] left-1/4 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-35 ${glowAmber}`} />
 
-      {/* dotted grid (subtle, auto-dims on mobile) */}
+      {/* dotted grid */}
       <motion.svg style={{ y: yGrid }} className="absolute inset-0 w-full h-full opacity-10 md:opacity-20" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
@@ -107,7 +108,6 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
 }
 
 /** Awwwards-style extras **/
-// Use transform-based scaleX instead of width to avoid layout reflow loops that can trigger ResizeObserver warnings
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
@@ -178,7 +178,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-/** Single-line ticker rail (awwwards-style), avoids overlaying text **/
+/** Single-line ticker rail (awwwards-style) **/
 function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean; duration?: number; enabled?: boolean }) {
   const items = [
     { label: '+$5,000', unit: 'USDT', color: '#26A17B' },
@@ -265,7 +265,7 @@ export default function App() {
   }, [theme]);
   const isDark = theme === "dark";
 
-  // Workaround: silence benign Chrome "ResizeObserver loop..." console error and avoid breaking execution
+  // silence benign ResizeObserver errors
   useEffect(() => {
     const handler = (e: ErrorEvent) => {
       const msg = e.message || '';
@@ -294,7 +294,6 @@ export default function App() {
   const enableFancy = !prm && !isMobile;
 
   const [walletMenuOpen, setWalletMenuOpen] = useState<boolean>(false);
-
   const [network, setNetwork] = useState<string>("ethereum");
   const [address, setAddress] = useState<string>("");
   const [contact, setContact] = useState<string>("");
@@ -306,7 +305,6 @@ export default function App() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Re-evaluate at submit time to avoid any stale closures
     const ok = computeCanSubmit(address, contact, agree);
     if (!ok) return;
     setSubmitted(true);
@@ -323,7 +321,7 @@ export default function App() {
   const labelColor = isDark ? "text-gray-200" : "text-gray-800";
   const fineText = isDark ? "text-gray-400" : "text-gray-600";
 
-  // close wallet menu on outside click (simple)
+  // close wallet menu on outside click
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -396,7 +394,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Always-visible ticker that never overlaps content (slower on mobile or if reduced motion) */}
+        {/* Always-visible ticker */}
         <TickerRail isDark={isDark} duration={isMobile ? 28 : 22} enabled={!prm} />
 
         {/* HERO */}
@@ -420,7 +418,7 @@ export default function App() {
                 <Reveal delay={0.15}>и <motion.span whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.trust}` }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} style={{ color: BRAND_COLORS.trust }}>Trust Wallet</motion.span></Reveal>
               </h1>
 
-              {/* Brand chips with native icons */}
+              {/* Brand chips */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
                   {[{ name: 'MetaMask', color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask }, { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom }, { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust }].map((w, i) => (
@@ -449,7 +447,7 @@ export default function App() {
                 <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Оценить адрес</a></Button></Magnetic>
                 <div className={`text-xs flex items-center gap-2 ${fineText}`}>
                   <Lock className="h-4 w-4" />
-                  Никогда не делитесь seed‑фразой или приватными ключами
+                  Никогда не делитесь seed-фразой или приватными ключами
                 </div>
               </div>
 
@@ -530,7 +528,7 @@ export default function App() {
                         className={`mt-1 ${isDark ? 'accent-teal-400' : 'accent-teal-600'}`}
                       />
                       <span>
-                        Подтверждаю, что являюсь владельцем адреса и не буду передавать seed‑фразы / приватные ключи.
+                        Подтверждаю, что являюсь владельцем адреса и не буду передавать seed-фразы / приватные ключи.
                       </span>
                     </label>
                   </CardContent>
@@ -562,7 +560,7 @@ export default function App() {
               {
                 icon: <ShieldCheck className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
                 title: "Прозрачность",
-                text: "Оцениваем только публичную ончейн‑историю. Никаких приватных данных.",
+                text: "Оцениваем только публичную ончейн-историю. Никаких приватных данных.",
               },
               {
                 icon: <Wallet className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
@@ -596,22 +594,64 @@ export default function App() {
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
-        <section id="how" className="mx-auto max-w-7xl px-4 py-14">
+        {/* HOW IT WORKS — Awwwards-style */}
+        <section id="how" className="mx-auto max-w-7xl px-4 py-20">
+          {/* decorative glow line */}
+          <div className="relative hidden md:block mb-12">
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
+          </div>
+
           <div className="grid md:grid-cols-4 gap-6">
             {[
-              { step: "01", title: "Адрес", text: "Укажите сеть и публичный адрес." },
-              { step: "02", title: "Оценка", text: "Мы анализируем транзакции и редкость коллекций." },
-              { step: "03", title: "Оффер", text: "Предложим выкуп без доступа к кошельку." },
-              { step: "04", title: "Выплата", text: "Согласуем способ и отправим средства." },
-            ].map((s, i) => (
-              <Card key={i} className={`${cardChrome} rounded-3xl shadow-sm`}>
-                <CardContent className="p-6">
-                  <div className={`text-sm ${fineText}`}>{s.step}</div>
-                  <h4 className="text-xl mt-1 mb-2">{s.title}</h4>
-                  <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
-                </CardContent>
-              </Card>
+              { num: "01", title: "Адрес",  text: "Укажите сеть и публичный адрес.",        icon: <Wallet className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
+              { num: "02", title: "Оценка", text: "Мы анализируем транзакции и редкость коллекций.", icon: <Sparkles className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
+              { num: "03", title: "Оффер",  text: "Предложим выкуп без доступа к кошельку.",       icon: <ShieldCheck className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
+              { num: "04", title: "Выплата",text: "Согласуем способ и отправим средства.",         icon: <Coins className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
+            ].map((s, i, arr) => (
+              <motion.div
+                key={s.num}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-10% 0px" }}
+                transition={{ duration: 0.45, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -4 }}
+                className={`group relative overflow-hidden rounded-3xl p-6 shadow-sm ${cardChrome}`}
+              >
+                {/* hover glow */}
+                <div className="pointer-events-none absolute -inset-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: 'radial-gradient(80rem 80rem at 80% -10%, rgba(45,212,191,.12), transparent 60%)' }} />
+
+                {/* big step number */}
+                <div className="pointer-events-none absolute -top-6 -right-2 text-8xl font-black leading-none tracking-tighter text-white/5 select-none">
+                  {s.num}
+                </div>
+
+                {/* header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
+                    {s.icon}
+                  </div>
+                  <span className={`text-xs uppercase tracking-wider ${fineText}`}>Шаг {s.num}</span>
+                </div>
+
+                <h4 className="text-xl font-semibold mb-2">{s.title}</h4>
+                <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
+
+                {/* bottom neon line */}
+                <motion.span
+                  className="absolute left-6 right-6 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-teal-400/80 to-transparent"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.1 }}
+                  style={{ transformOrigin: '0% 50%' }}
+                />
+
+                {/* connector to next card */}
+                {i < arr.length - 1 && (
+                  <span className="hidden md:block absolute top-16 -right-3 w-6 h-px bg-white/10" />
+                )}
+              </motion.div>
             ))}
           </div>
         </section>
@@ -625,7 +665,7 @@ export default function App() {
                 Мы делаем оценку в течение 24–48 часов и связываемся по вашему контакту.
               </p>
               <ul className={`space-y-3 text-sm ${fineText}`}>
-                <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Не передавайте seed‑фразы или приватные ключи.</li>
+                <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Не передавайте seed-фразы или приватные ключи.</li>
                 <li className="flex gap-2"><MessageSquare className="h-4 w-4 mt-0.5"/> Контакты: Telegram, WhatsApp, WeChat, Email.</li>
                 <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5"/> Выкуп — только коллекций/NFT/имён без доступа к кошельку.</li>
               </ul>
@@ -681,7 +721,7 @@ export default function App() {
                   onChange={(e) => setAgree(e.target.checked)}
                   className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`}
                 />
-                <span>Я подтверждаю, что являюсь владельцем адреса и НЕ передаю seed‑фразы/приватные ключи.</span>
+                <span>Я подтверждаю, что являюсь владельцем адреса и НЕ передаю seed-фразы/приватные ключи.</span>
               </label>
               <Magnetic enabled={enableFancy}><Button type="submit" disabled={!computeCanSubmit(address, contact, agree)} className={buttonPrimary}>
                 <Send className="mr-2 h-4 w-4" /> Отправить
@@ -697,7 +737,7 @@ export default function App() {
         <footer className={`mt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-2 gap-6 items-center">
             <p className={`text-xs ${fineText}`}>
-              © {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн‑артефактов. Мы никогда не запрашиваем и не принимаем seed‑фразы и приватные ключи.
+              © {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн-артефактов. Мы никогда не запрашиваем и не принимаем seed-фразы и приватные ключи.
             </p>
             <div className="flex justify-start md:justify-end gap-4 text-sm">
               <a href="#how" className="hover:opacity-80">Процесс</a>

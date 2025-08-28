@@ -1,0 +1,712 @@
+import React, { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
+import { Wallet, Lock, ShieldCheck, MessageSquare, Send, Sparkles, Coins, Sun, Moon, ChevronDown, ChevronDownCircle } from "lucide-react";
+import { Button } from "./components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "./components/ui/card";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
+import { Label } from "./components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./components/ui/select";
+
+/**
+ * Utility: pure function used by the UI and unit tests
+ * Hardened to avoid runtime crashes if called with unexpected values.
+ */
+export function computeCanSubmit(address: unknown, contact: unknown, agree: unknown): boolean {
+  const a = typeof address === 'string' ? address : '';
+  const c = typeof contact === 'string' ? contact : '';
+  const g = typeof agree === 'boolean' ? agree : Boolean(agree);
+  const isAddressOk = a.trim().length >= 8; // naive front-end check only
+  return isAddressOk && c.trim().length > 2 && g;
+}
+
+/**
+ * Tiny test runner for the computeCanSubmit function.
+ * These are basic UI-level tests and will log to the console.
+ * NOTE: Original five cases preserved; additional cases appended for coverage.
+ */
+function runTests() {
+  type T = { name: string; address: any; contact: any; agree: any; expect: boolean };
+  const base: T[] = [
+    { name: "empty fields => false", address: "", contact: "", agree: false, expect: false },
+    { name: "short address => false", address: "0x123", contact: "@u", agree: true, expect: false },
+    { name: "missing contact => false", address: "0x12345678", contact: "", agree: true, expect: false },
+    { name: "not agreed => false", address: "0x12345678", contact: "@user", agree: false, expect: false },
+    { name: "valid => true", address: "0x1234567890", contact: "@user", agree: true, expect: true },
+  ];
+  // Additional tests (do not modify the originals above)
+  const more: T[] = [
+    { name: "address with spaces => true", address: "   0x12345678   ", contact: "tg:@user", agree: true, expect: true },
+    { name: "contact only spaces => false", address: "0xabcdef123456", contact: "   ", agree: true, expect: false },
+    { name: "agree false despite valid fields => false", address: "0xabcdef123456", contact: "+1-202-555", agree: false, expect: false },
+    // New edge cases for robustness
+    { name: "address undefined => false (guarded)", address: undefined, contact: "@u", agree: true, expect: false },
+    { name: "contact null => false (guarded)", address: "0x12345678", contact: null, agree: true, expect: false },
+    { name: "agree as truthy string => true (coerced)", address: "0x12345678", contact: "@u", agree: "yes", expect: true },
+  ];
+  const cases: T[] = [...base, ...more];
+
+  const results = cases.map((c) => ({
+    name: c.name,
+    got: computeCanSubmit(c.address, c.contact, c.agree),
+    expect: c.expect,
+  }));
+  const failed = results.filter((r) => r.got !== r.expect);
+  // eslint-disable-next-line no-console
+  console.group("WalletBuyBack UI tests");
+  results.forEach((r) => console[r.got === r.expect ? "log" : "error"](`${r.name}: got ${r.got}, expect ${r.expect}`));
+  console.log(failed.length === 0 ? "All tests passed" : `${failed.length} test(s) failed`);
+  console.groupEnd();
+}
+
+if (typeof window !== "undefined") {
+  // Run once in the browser for quick feedback during dev preview
+  try { runTests(); } catch (e) { /* no-op */ }
+}
+
+/** BRAND COLORS & SVG PATHS **/
+const BRAND_COLORS = { metamask: "#F6851B", phantom: "#5341F5", trust: "#3375BB" } as const;
+const BRAND_SVGS = {
+  metamask: "/MetaMask-icon-fox.svg",
+  phantom: "/Phantom_SVG_Icon.svg",
+  trust: "/Trust_Stacked Logo_Blue.svg", // space encoded
+} as const;
+
+/** CRYPTO BACKGROUND with Parallax **/
+function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
+  const { scrollY } = useScroll();
+  const yGlows = useTransform(scrollY, [0, 800], [0, -80]);
+  const yGrid = useTransform(scrollY, [0, 800], [0, -40]);
+
+  const isDark = theme === "dark";
+  const glowTeal = isDark ? "bg-teal-400/20" : "bg-teal-100";
+  const glowSky = isDark ? "bg-sky-400/20" : "bg-sky-100";
+  const glowAmber = isDark ? "bg-amber-400/20" : "bg-amber-100";
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {/* soft radial glows with parallax */}
+      <motion.div style={{ y: yGlows }} className={`absolute -top-40 -left-40 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-35 ${glowTeal}`} />
+      <motion.div style={{ y: yGlows }} className={`absolute top-1/3 -right-40 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-35 ${glowSky}`} />
+      <motion.div style={{ y: yGlows }} className={`absolute bottom-[-10rem] left-1/4 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-35 ${glowAmber}`} />
+
+      {/* dotted grid (subtle, auto-dims on mobile) */}
+      <motion.svg style={{ y: yGrid }} className="absolute inset-0 w-full h-full opacity-10 md:opacity-20" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill={isDark ? "#334155" : "#c7d2fe"} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </motion.svg>
+
+      {/* noise / grain overlay */}
+      <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.03] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:6px_6px]" />
+    </div>
+  );
+}
+
+/** Awwwards-style extras **/
+// Use transform-based scaleX instead of width to avoid layout reflow loops that can trigger ResizeObserver warnings
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  return (
+    <motion.div
+      style={{ scaleX, transformOrigin: '0% 50%' }}
+      className="fixed top-0 left-0 h-[2px] bg-teal-400 z-[60] w-full will-change-transform"
+    />
+  );
+}
+
+function Magnetic({ children, enabled = true }: { children: React.ReactNode; enabled?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const x = useSpring(mx, { stiffness: 200, damping: 20, mass: 0.2 });
+  const y = useSpring(my, { stiffness: 200, damping: 20, mass: 0.2 });
+  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!enabled) return;
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
+    const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
+    mx.set(dx * 12); my.set(dy * 12);
+  }
+  function onLeave() { mx.set(0); my.set(0); }
+  if (!enabled) return <div>{children}</div>;
+  return <motion.div ref={ref} style={{ x, y }} onMouseMove={onMove} onMouseLeave={onLeave}>{children}</motion.div>;
+}
+
+function TiltCard({ children, className = '', enabled = true }: { children: React.ReactNode; className?: string; enabled?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const rotateX = useSpring(rx, { stiffness: 150, damping: 15, mass: 0.3 });
+  const rotateY = useSpring(ry, { stiffness: 150, damping: 15, mass: 0.3 });
+  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!enabled) return;
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width; // 0..1
+    const py = (e.clientY - r.top) / r.height;
+    ry.set((px - 0.5) * 14); // rotateY: left/right
+    rx.set(-(py - 0.5) * 14); // rotateX: up/down
+  }
+  function onLeave() { rx.set(0); ry.set(0); }
+  if (!enabled) return <div className={className}>{children}</div>;
+  return (
+    <motion.div ref={ref} style={{ rotateX, rotateY }} onMouseMove={onMove} onMouseLeave={onLeave} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
+function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <span className="inline-block overflow-hidden align-bottom">
+      <motion.span
+        initial={{ y: '100%', opacity: 0 }}
+        whileInView={{ y: '0%', opacity: 1 }}
+        viewport={{ once: true, margin: '-10% 0px' }}
+        transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+        className="inline-block"
+      >
+        {children}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Single-line ticker rail (awwwards-style), avoids overlaying text **/
+function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean; duration?: number; enabled?: boolean }) {
+  const items = [
+    { label: '+$5,000', unit: 'USDT', color: '#26A17B' },
+    { label: '+$25,000', unit: 'ETH',  color: '#627EEA' },
+    { label: '+$5,000', unit: 'USDC', color: '#2775CA' },
+    { label: '+$12,000', unit: 'BTC',  color: '#F7931A' },
+    { label: '+$7,500', unit: 'SOL',  color: '#14F195' },
+  ];
+  const railChrome = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200';
+  return (
+    <div className={`relative border-y ${railChrome}`}>
+      <div className="overflow-hidden">
+        {enabled ? (
+          <motion.div
+            className="flex items-center gap-3 py-2 whitespace-nowrap will-change-transform"
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration, repeat: Infinity, ease: 'linear' }}
+          >
+            {[0, 1].map((dup) => (
+              <div key={dup} className="flex items-center gap-3">
+                {items.map((it, idx) => (
+                  <div
+                    key={`${dup}-${idx}`}
+                    className="flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-semibold shadow"
+                    style={{
+                      background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))',
+                      border: `1px solid ${it.color}66`,
+                      boxShadow: `0 8px 30px rgba(0,0,0,.25), 0 0 24px ${it.color}44`,
+                    }}
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: it.color }} />
+                    <span className="tracking-wide">{it.label}</span>
+                    <span className="opacity-80">{it.unit}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        ) : (
+          <div className="flex items-center gap-3 py-2 whitespace-nowrap">
+            {items.map((it, idx) => (
+              <div key={idx} className="flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-semibold shadow"
+                style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))', border: `1px solid ${it.color}66` }}>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: it.color }} />
+                <span className="tracking-wide">{it.label}</span>
+                <span className="opacity-80">{it.unit}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScrollCue() {
+  return (
+    <div className="absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-6 text-xs text-white/70 select-none">
+      <motion.div
+        initial={{ y: 0, opacity: 0.7 }}
+        animate={{ y: [0, 4, 0], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 1.8, repeat: Infinity }}
+        className="flex items-center gap-2"
+      >
+        <ChevronDownCircle className="h-4 w-4" />
+        Прокрутите вниз
+      </motion.div>
+    </div>
+  );
+}
+
+export default function App() {
+  // THEME (persisted), motion & responsive flags
+  const prm = useReducedMotion();
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('wbb-theme');
+      if (saved === 'light' || saved === 'dark') setTheme(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('wbb-theme', theme); } catch {}
+  }, [theme]);
+  const isDark = theme === "dark";
+
+  // Workaround: silence benign Chrome "ResizeObserver loop..." console error and avoid breaking execution
+  useEffect(() => {
+    const handler = (e: ErrorEvent) => {
+      const msg = e.message || '';
+      if (msg.includes('ResizeObserver loop') || msg.includes('ResizeObserver loop limit exceeded')) {
+        e.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener('error', handler, { capture: true });
+    return () => window.removeEventListener('error', handler, { capture: true } as any);
+  }, []);
+
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile((e as MediaQueryList).matches ?? (e as MediaQueryListEvent).matches);
+    setIsMobile(mq.matches);
+    // Safari support
+    // @ts-ignore
+    mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+    return () => {
+      // @ts-ignore
+      mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange);
+    };
+  }, []);
+
+  const enableFancy = !prm && !isMobile;
+
+  const [walletMenuOpen, setWalletMenuOpen] = useState<boolean>(false);
+
+  const [network, setNetwork] = useState<string>("ethereum");
+  const [address, setAddress] = useState<string>("");
+  const [contact, setContact] = useState<string>("");
+  const [note, setNote] = useState<string>("");
+  const [agree, setAgree] = useState<boolean>(false);
+  const [submitted, setSubmitted] = useState<boolean>(false);
+
+  const canSubmit = computeCanSubmit(address, contact, agree);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Re-evaluate at submit time to avoid any stale closures
+    const ok = computeCanSubmit(address, contact, agree);
+    if (!ok) return;
+    setSubmitted(true);
+  };
+
+  // theme-aware classes
+  const rootClass = isDark ? "relative min-h-screen bg-gradient-to-br from-[#0b1020] via-[#0a0f1a] to-black text-gray-100" : "relative min-h-screen bg-white text-gray-900";
+  const headerClass = isDark ? "sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f1a]/80 border-b border-gray-800" : "sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-gray-200";
+  const brandAccent = isDark ? "text-teal-300" : "text-teal-600";
+  const buttonPrimary = isDark ? "rounded-2xl bg-teal-500 hover:bg-teal-400 text-white" : "rounded-2xl bg-teal-600 hover:bg-teal-500 text-white";
+  const cardChrome = isDark ? "bg-[#0d1222]/80 border border-white/10" : "bg-white border border-gray-200";
+  const chipBg = isDark ? "bg-white/10 text-white" : "bg-gray-100 text-gray-800";
+  const inputChrome = isDark ? "bg-[#0b1020] border-white/10 rounded-xl placeholder:text-gray-400 text-white" : "bg-white border-gray-300 rounded-xl placeholder:text-gray-400 text-gray-900";
+  const labelColor = isDark ? "text-gray-200" : "text-gray-800";
+  const fineText = isDark ? "text-gray-400" : "text-gray-600";
+
+  // close wallet menu on outside click (simple)
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current) return;
+      if (walletMenuOpen && !menuRef.current.contains(e.target as Node)) setWalletMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [walletMenuOpen]);
+
+  return (
+    <div className={rootClass}>
+      <CryptoBackground theme={theme} />
+      <ScrollProgress />
+
+      <div className="relative z-10">
+        {/* Header */}
+        <header className={headerClass}>
+          <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-teal-600 grid place-items-center ring-1 ring-teal-400/50">
+                <Wallet className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-semibold tracking-wide">
+                Wallet<span className={brandAccent}>BuyBack</span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 relative" ref={menuRef}>
+              <nav className="hidden md:flex items-center gap-6 text-sm">
+                <button onClick={() => setWalletMenuOpen((v) => !v)} className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full ${chipBg} hover:opacity-90`}>
+                  Кошельки <ChevronDown className="h-4 w-4" />
+                </button>
+                <a href="#how" className="hover:opacity-80 transition">Как это работает</a>
+                <a href="#features" className="hover:opacity-80 transition">Возможности</a>
+                <a href="#form" className="hover:opacity-80 transition">Оценить адрес</a>
+              </nav>
+
+              {/* Wallet menu (desktop) */}
+              {walletMenuOpen && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className={`absolute top-12 right-24 hidden md:grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${isDark ? 'bg-[#0b1020]/95 border border-white/10' : 'bg-white border border-gray-200'}`}>
+                  {[
+                    { name: 'MetaMask', color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask, text: 'Ethereum / EVM' },
+                    { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom, text: 'Solana' },
+                    { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust, text: 'Multi-chain' },
+                  ].map((w) => (
+                    <div key={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className={`rounded-xl p-3 flex items-center gap-2 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <div className="h-8 w-8 grid place-items-center rounded-lg" style={{ backgroundColor: w.color + '22' }}>
+                        <img src={w.src} alt={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className="h-5 w-5 object-contain" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium" style={{ color: w.color }}>{w.name}</div>
+                        <div className={`text-xs ${fineText}`}>{w.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+
+              <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Быстрая оценка</a></Button></Magnetic>
+              <button
+                aria-label="Toggle theme"
+                onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                className={`h-10 w-10 grid place-items-center rounded-2xl border ${isDark ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Always-visible ticker that never overlaps content (slower on mobile or if reduced motion) */}
+        <TickerRail isDark={isDark} duration={isMobile ? 28 : 22} enabled={!prm} />
+
+        {/* HERO */}
+        <section className="relative isolate">
+          <div className="mx-auto max-w-7xl px-4 py-14 md:py-24 grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-20% 0px" }}
+              transition={{ duration: 0.6 }}
+              className="space-y-6"
+            >
+              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 ${isDark ? 'bg-white/10 ring-white/15' : 'bg-teal-50 ring-teal-200'}`}>
+                <Sparkles className={`h-4 w-4 ${isDark ? '' : 'text-teal-600'}`} />
+                <span className={`text-xs tracking-wide ${isDark ? 'text-white/80' : 'text-teal-700'}`}>Читабельный минимализм · awwwards стиль</span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.05]">
+                <Reveal>Выкупим Ваш Кошелек</Reveal>{' '}
+                <Reveal delay={0.05}><motion.span whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.metamask}` }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} style={{ color: BRAND_COLORS.metamask }}>MetaMask</motion.span></Reveal>,{' '}
+                <Reveal delay={0.1}><motion.span whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.phantom}` }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} style={{ color: BRAND_COLORS.phantom }}>Phantom</motion.span></Reveal>,{' '}
+                <Reveal delay={0.15}>и <motion.span whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.trust}` }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} style={{ color: BRAND_COLORS.trust }}>Trust Wallet</motion.span></Reveal>
+              </h1>
+
+              {/* Brand chips with native icons */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-3">
+                  {[{ name: 'MetaMask', color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask }, { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom }, { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust }].map((w, i) => (
+                    <motion.div
+                      key={w.name}
+                      data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium shadow cursor-interactive`}
+                      style={{ backgroundColor: w.color, boxShadow: `0 0 22px ${w.color}66` }}
+                      animate={enableFancy ? { y: [0, -3, 0] } : undefined}
+                      transition={{ duration: 4, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+                      whileHover={enableFancy ? { scale: 1.05, rotate: 0.4 } : undefined}
+                    >
+                      <img src={w.src} alt={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className="h-4 w-4 object-contain drop-shadow" />
+                      {w.name}
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>Быстрая оценка стоимости</div>
+                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>Безопасно</div>
+                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>Быстрая выплата</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Оценить адрес</a></Button></Magnetic>
+                <div className={`text-xs flex items-center gap-2 ${fineText}`}>
+                  <Lock className="h-4 w-4" />
+                  Никогда не делитесь seed‑фразой или приватными ключами
+                </div>
+              </div>
+
+              <ScrollCue />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-20% 0px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <TiltCard enabled={enableFancy} className="will-change-transform">
+                <Card className={`${cardChrome} rounded-3xl overflow-hidden shadow-sm`}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-8 w-8 grid place-items-center rounded-xl ${isDark ? 'bg-teal-500 ring-1 ring-teal-300/50' : 'bg-teal-600 ring-1 ring-teal-400/50'}`}>
+                          <Coins className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className={`text-sm ${fineText}`}>Быстрая оценка</p>
+                          <p className="text-lg font-medium">Предзаявка</p>
+                        </div>
+                      </div>
+                      <div className={`text-xs ${fineText}`}>~ 2 мин</div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label className={labelColor}>Сеть</Label>
+                      <Select value={network} onValueChange={setNetwork}>
+                        <SelectTrigger className={inputChrome}>
+                          <SelectValue placeholder="Выберите сеть" />
+                        </SelectTrigger>
+                        <SelectContent className={`${isDark ? 'bg-[#0b1020] border-white/10 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                          <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
+                          <SelectItem value="solana">Solana / Phantom</SelectItem>
+                          <SelectItem value="bsc">BNB Chain</SelectItem>
+                          <SelectItem value="polygon">Polygon</SelectItem>
+                          <SelectItem value="ton">TON</SelectItem>
+                          <SelectItem value="other">Другая сеть</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className={labelColor}>Адрес</Label>
+                      <Input
+                        placeholder="0x… или адрес Solana/TON"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className={inputChrome}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className={labelColor}>Контакт для связи</Label>
+                      <Input
+                        placeholder="@username / email / телефон"
+                        value={contact}
+                        onChange={(e) => setContact(e.target.value)}
+                        className={inputChrome}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className={labelColor}>Комментарий</Label>
+                      <Textarea
+                        placeholder="Опишите коллекции, ENS, NFT и т.п."
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className={`${inputChrome} min-h-[96px]`}
+                      />
+                    </div>
+                    <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
+                      <input
+                        type="checkbox"
+                        checked={agree}
+                        onChange={(e) => setAgree(e.target.checked)}
+                        className={`mt-1 ${isDark ? 'accent-teal-400' : 'accent-teal-600'}`}
+                      />
+                      <span>
+                        Подтверждаю, что являюсь владельцем адреса и не буду передавать seed‑фразы / приватные ключи.
+                      </span>
+                    </label>
+                  </CardContent>
+                  <CardFooter className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className={`text-xs flex items-center gap-2 ${fineText}`}>
+                      <ShieldCheck className="h-4 w-4" />
+                      Выплаты: USDT, USDC, BTC, ETH или локальная валюта
+                    </div>
+                    <Magnetic enabled={enableFancy}><Button onClick={handleSubmit} disabled={!canSubmit} className={buttonPrimary}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Отправить заявку
+                    </Button></Magnetic>
+                  </CardFooter>
+                </Card>
+              </TiltCard>
+              {submitted && (
+                <div className={`mt-4 text-sm ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>
+                  Спасибо! Мы свяжемся с вами по указанному контакту.
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section id="features" className="mx-auto max-w-7xl px-4 pb-8 md:pb-16">
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <ShieldCheck className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
+                title: "Прозрачность",
+                text: "Оцениваем только публичную ончейн‑историю. Никаких приватных данных.",
+              },
+              {
+                icon: <Wallet className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
+                title: "Поддержка популярных сетей",
+                text: "MetaMask, Phantom, Trust Wallet и др.",
+              },
+              {
+                icon: <Coins className={`h-5 w-5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
+                title: "Быстрые выплаты",
+                text: "USDT, USDC, BTC, ETH или локальная валюта.",
+              },
+            ].map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.4, delay: 0.05 * i }}
+              >
+                <Card className={`${cardChrome} rounded-3xl shadow-sm`}>
+                  <CardContent className="p-6">
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center mb-4 ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
+                      {f.icon}
+                    </div>
+                    <h3 className="text-lg mb-2">{f.title}</h3>
+                    <p className={`text-sm leading-relaxed ${fineText}`}>{f.text}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section id="how" className="mx-auto max-w-7xl px-4 py-14">
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              { step: "01", title: "Адрес", text: "Укажите сеть и публичный адрес." },
+              { step: "02", title: "Оценка", text: "Мы анализируем транзакции и редкость коллекций." },
+              { step: "03", title: "Оффер", text: "Предложим выкуп без доступа к кошельку." },
+              { step: "04", title: "Выплата", text: "Согласуем способ и отправим средства." },
+            ].map((s, i) => (
+              <Card key={i} className={`${cardChrome} rounded-3xl shadow-sm`}>
+                <CardContent className="p-6">
+                  <div className={`text-sm ${fineText}`}>{s.step}</div>
+                  <h4 className="text-xl mt-1 mb-2">{s.title}</h4>
+                  <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* FORM */}
+        <section id="form" className="mx-auto max-w-7xl px-4 py-16">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
+            <div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Отправьте адрес на оценку</h2>
+              <p className={`max-w-xl mb-6 ${fineText}`}>
+                Мы делаем оценку в течение 24–48 часов и связываемся по вашему контакту.
+              </p>
+              <ul className={`space-y-3 text-sm ${fineText}`}>
+                <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Не передавайте seed‑фразы или приватные ключи.</li>
+                <li className="flex gap-2"><MessageSquare className="h-4 w-4 mt-0.5"/> Контакты: Telegram, WhatsApp, WeChat, Email.</li>
+                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5"/> Выкуп — только коллекций/NFT/имён без доступа к кошельку.</li>
+              </ul>
+            </div>
+            <form onSubmit={handleSubmit} className={`${cardChrome} rounded-3xl p-6 grid gap-4 shadow-sm`}>
+              <div className="grid gap-2">
+                <Label className={labelColor}>Сеть</Label>
+                <Select value={network} onValueChange={setNetwork}>
+                  <SelectTrigger className={inputChrome}>
+                    <SelectValue placeholder="Выберите сеть" />
+                  </SelectTrigger>
+                  <SelectContent className={`${isDark ? 'bg-[#0b1020] border-white/10 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                    <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
+                    <SelectItem value="solana">Solana / Phantom</SelectItem>
+                    <SelectItem value="bsc">BNB Chain</SelectItem>
+                    <SelectItem value="polygon">Polygon</SelectItem>
+                    <SelectItem value="ton">TON</SelectItem>
+                    <SelectItem value="other">Другая сеть</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label className={labelColor}>Адрес</Label>
+                <Input
+                  placeholder="0x… или адрес Solana/TON"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className={inputChrome}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className={labelColor}>Контакт</Label>
+                <Input
+                  placeholder="@telegram / WhatsApp / Email"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  className={inputChrome}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className={labelColor}>Комментарий</Label>
+                <Textarea
+                  placeholder="Опишите активы (NFT, ENS и др.)"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className={`${inputChrome} min-h-[96px]`}
+                />
+              </div>
+              <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
+                <input
+                  type="checkbox"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                  className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`}
+                />
+                <span>Я подтверждаю, что являюсь владельцем адреса и НЕ передаю seed‑фразы/приватные ключи.</span>
+              </label>
+              <Magnetic enabled={enableFancy}><Button type="submit" disabled={!computeCanSubmit(address, contact, agree)} className={buttonPrimary}>
+                <Send className="mr-2 h-4 w-4" /> Отправить
+              </Button></Magnetic>
+              {submitted && (
+                <div className={`${isDark ? 'text-teal-300' : 'text-teal-700'} text-sm`}>Заявка отправлена. Мы свяжемся с вами по указанному контакту.</div>
+              )}
+            </form>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className={`mt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+          <div className="mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-2 gap-6 items-center">
+            <p className={`text-xs ${fineText}`}>
+              © {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн‑артефактов. Мы никогда не запрашиваем и не принимаем seed‑фразы и приватные ключи.
+            </p>
+            <div className="flex justify-start md:justify-end gap-4 text-sm">
+              <a href="#how" className="hover:opacity-80">Процесс</a>
+              <a href="#features" className="hover:opacity-80">Возможности</a>
+              <a href="#form" className="hover:opacity-80">Заявка</a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}

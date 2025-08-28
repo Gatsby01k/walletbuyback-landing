@@ -9,22 +9,16 @@ import { Textarea } from "./components/ui/textarea";
 import { Label } from "./components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./components/ui/select";
 
-/**
- * Utility: pure function used by the UI and unit tests
- * Hardened to avoid runtime crashes if called with unexpected values.
- */
+/** Pure UI helper */
 export function computeCanSubmit(address: unknown, contact: unknown, agree: unknown): boolean {
   const a = typeof address === 'string' ? address : '';
   const c = typeof contact === 'string' ? contact : '';
   const g = typeof agree === 'boolean' ? agree : Boolean(agree);
-  const isAddressOk = a.trim().length >= 8; // naive front-end check only
+  const isAddressOk = a.trim().length >= 8;
   return isAddressOk && c.trim().length > 2 && g;
 }
 
-/**
- * Tiny test runner for the computeCanSubmit function.
- * These are basic UI-level tests and will log to the console.
- */
+/** Tiny UI tests (console) */
 function runTests() {
   type T = { name: string; address: any; contact: any; agree: any; expect: boolean };
   const base: T[] = [
@@ -56,12 +50,9 @@ function runTests() {
   console.log(failed.length === 0 ? "All tests passed" : `${failed.length} test(s) failed`);
   console.groupEnd();
 }
+if (typeof window !== "undefined") { try { runTests(); } catch {} }
 
-if (typeof window !== "undefined") {
-  try { runTests(); } catch {}
-}
-
-/** BRAND COLORS & SVG PATHS **/
+/** Brands */
 const BRAND_COLORS = { metamask: "#F6851B", phantom: "#5341F5", trust: "#3375BB" } as const;
 const BRAND_SVGS = {
   metamask: "/MetaMask-icon-fox.svg",
@@ -69,12 +60,11 @@ const BRAND_SVGS = {
   trust: "/Trust_Stacked Logo_Blue.svg",
 } as const;
 
-/** CRYPTO BACKGROUND with Parallax **/
+/** Background */
 function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
   const { scrollY } = useScroll();
   const yGlows = useTransform(scrollY, [0, 800], [0, -80]);
   const yGrid = useTransform(scrollY, [0, 800], [0, -40]);
-
   const isDark = theme === "dark";
   const glowTeal = isDark ? "bg-teal-400/20" : "bg-teal-100";
   const glowSky = isDark ? "bg-sky-400/20" : "bg-sky-100";
@@ -98,22 +88,15 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
   );
 }
 
-/** Awwwards-style extras **/
+/** Awwwards extras */
 function ScrollProgress() {
   const { scrollYProgress } = useScroll();
   const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  return (
-    <motion.div
-      style={{ scaleX, transformOrigin: '0% 50%' }}
-      className="fixed top-0 left-0 h-[2px] bg-teal-400 z-[60] w-full will-change-transform"
-    />
-  );
+  return <motion.div style={{ scaleX, transformOrigin: '0% 50%' }} className="fixed top-0 left-0 h-[2px] bg-teal-400 z-[60] w-full" />;
 }
-
 function Magnetic({ children, enabled = true }: { children: React.ReactNode; enabled?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
+  const mx = useMotionValue(0), my = useMotionValue(0);
   const x = useSpring(mx, { stiffness: 200, damping: 20, mass: 0.2 });
   const y = useSpring(my, { stiffness: 200, damping: 20, mass: 0.2 });
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -124,52 +107,31 @@ function Magnetic({ children, enabled = true }: { children: React.ReactNode; ena
     const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
     mx.set(dx * 12); my.set(dy * 12);
   }
-  function onLeave() { mx.set(0); my.set(0); }
-  if (!enabled) return <div>{children}</div>;
-  return <motion.div ref={ref} style={{ x, y }} onMouseMove={onMove} onMouseLeave={onLeave}>{children}</motion.div>;
+  return <motion.div ref={ref} style={{ x, y }} onMouseMove={onMove} onMouseLeave={() => { mx.set(0); my.set(0); }}>{children}</motion.div>;
 }
-
 function TiltCard({ children, className = '', enabled = true }: { children: React.ReactNode; className?: string; enabled?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const rx = useMotionValue(0);
-  const ry = useMotionValue(0);
+  const rx = useMotionValue(0), ry = useMotionValue(0);
   const rotateX = useSpring(rx, { stiffness: 150, damping: 15, mass: 0.3 });
   const rotateY = useSpring(ry, { stiffness: 150, damping: 15, mass: 0.3 });
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!enabled) return;
     const el = ref.current; if (!el) return;
     const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width; // 0..1
-    const py = (e.clientY - r.top) / r.height;
-    ry.set((px - 0.5) * 14);
-    rx.set(-(py - 0.5) * 14);
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    ry.set((px - 0.5) * 14); rx.set(-(py - 0.5) * 14);
   }
-  function onLeave() { rx.set(0); ry.set(0); }
-  if (!enabled) return <div className={className}>{children}</div>;
-  return (
-    <motion.div ref={ref} style={{ rotateX, rotateY }} onMouseMove={onMove} onMouseLeave={onLeave} className={className}>
-      {children}
-    </motion.div>
-  );
+  return <motion.div ref={ref} style={{ rotateX, rotateY }} onMouseMove={onMove} onMouseLeave={() => { rx.set(0); ry.set(0); }} className={className}>{children}</motion.div>;
 }
-
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <span className="inline-block overflow-hidden align-bottom">
-      <motion.span
-        initial={{ y: '100%', opacity: 0 }}
-        whileInView={{ y: '0%', opacity: 1 }}
-        viewport={{ once: true, margin: '-10% 0px' }}
-        transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-        className="inline-block"
-      >
-        {children}
-      </motion.span>
+      <motion.span initial={{ y: '100%', opacity: 0 }} whileInView={{ y: '0%', opacity: 1 }} viewport={{ once: true, margin: '-10% 0px' }} transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }} className="inline-block">{children}</motion.span>
     </span>
   );
 }
 
-/** Single-line ticker rail **/
+/** Ticker */
 function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean; duration?: number; enabled?: boolean }) {
   const items = [
     { label: '+$5,000', unit: 'USDT', color: '#26A17B' },
@@ -183,23 +145,12 @@ function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean
     <div className={`relative border-y ${railChrome}`}>
       <div className="overflow-hidden">
         {enabled ? (
-          <motion.div
-            className="flex items-center gap-3 py-2 whitespace-nowrap will-change-transform"
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{ duration, repeat: Infinity, ease: 'linear' }}
-          >
-            {[0, 1].map((dup) => (
+          <motion.div className="flex items-center gap-3 py-2 whitespace-nowrap" animate={{ x: ['0%', '-50%'] }} transition={{ duration, repeat: Infinity, ease: 'linear' }}>
+            {[0,1].map((dup) => (
               <div key={dup} className="flex items-center gap-3">
                 {items.map((it, idx) => (
-                  <div
-                    key={`${dup}-${idx}`}
-                    className="flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-semibold shadow"
-                    style={{
-                      background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))',
-                      border: `1px solid ${it.color}66`,
-                      boxShadow: `0 8px 30px rgba(0,0,0,.25), 0 0 24px ${it.color}44`,
-                    }}
-                  >
+                  <div key={`${dup}-${idx}`} className="flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-semibold shadow"
+                       style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))', border: `1px solid ${it.color}66`, boxShadow: `0 8px 30px rgba(0,0,0,.25), 0 0 24px ${it.color}44` }}>
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: it.color }} />
                     <span className="tracking-wide">{it.label}</span>
                     <span className="opacity-80">{it.unit}</span>
@@ -212,7 +163,7 @@ function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean
           <div className="flex items-center gap-3 py-2 whitespace-nowrap">
             {items.map((it, idx) => (
               <div key={idx} className="flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-semibold shadow"
-                style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))', border: `1px solid ${it.color}66` }}>
+                   style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.65), rgba(0,0,0,.45))', border: `1px solid ${it.color}66` }}>
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: it.color }} />
                 <span className="tracking-wide">{it.label}</span>
                 <span className="opacity-80">{it.unit}</span>
@@ -224,18 +175,11 @@ function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean
     </div>
   );
 }
-
 function ScrollCue() {
   return (
     <div className="absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-6 text-xs text-white/70 select-none">
-      <motion.div
-        initial={{ y: 0, opacity: 0.7 }}
-        animate={{ y: [0, 4, 0], opacity: [0.7, 1, 0.7] }}
-        transition={{ duration: 1.8, repeat: Infinity }}
-        className="flex items-center gap-2"
-      >
-        <ChevronDownCircle className="h-4 w-4" />
-        Прокрутите вниз
+      <motion.div initial={{ y: 0, opacity: 0.7 }} animate={{ y: [0, 4, 0], opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.8, repeat: Infinity }} className="flex items-center gap-2">
+        <ChevronDownCircle className="h-4 w-4" /> Прокрутите вниз
       </motion.div>
     </div>
   );
@@ -244,26 +188,14 @@ function ScrollCue() {
 export default function App() {
   const prm = useReducedMotion();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('wbb-theme');
-      if (saved === 'light' || saved === 'dark') setTheme(saved);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try { localStorage.setItem('wbb-theme', theme); } catch {}
-  }, [theme]);
+  useEffect(() => { try { const saved = localStorage.getItem('wbb-theme'); if (saved === 'light' || saved === 'dark') setTheme(saved); } catch {} }, []);
+  useEffect(() => { try { localStorage.setItem('wbb-theme', theme); } catch {} }, [theme]);
   const isDark = theme === "dark";
 
   useEffect(() => {
-    const handler = (e: ErrorEvent) => {
-      const msg = e.message || '';
-      if (msg.includes('ResizeObserver loop') || msg.includes('ResizeObserver loop limit exceeded')) {
-        e.stopImmediatePropagation();
-      }
-    };
+    const handler = (e: ErrorEvent) => { const msg = e.message || ''; if (msg.includes('ResizeObserver loop')) e.stopImmediatePropagation(); };
     window.addEventListener('error', handler, { capture: true });
-    return () => window.removeEventListener('error', handler, { capture: true } as any);
+    return () => window.removeEventListener('error', handler as any, { capture: true } as any);
   }, []);
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -278,7 +210,6 @@ export default function App() {
       mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange);
     };
   }, []);
-
   const enableFancy = !prm && !isMobile;
 
   const [walletMenuOpen, setWalletMenuOpen] = useState<boolean>(false);
@@ -288,15 +219,9 @@ export default function App() {
   const [note, setNote] = useState<string>("");
   const [agree, setAgree] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
-
   const canSubmit = computeCanSubmit(address, contact, agree);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const ok = computeCanSubmit(address, contact, agree);
-    if (!ok) return;
-    setSubmitted(true);
-  };
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (!computeCanSubmit(address, contact, agree)) return; setSubmitted(true); };
 
   const rootClass = isDark ? "relative min-h-screen bg-gradient-to-br from-[#0b1020] via-[#0a0f1a] to-black text-gray-100" : "relative min-h-screen bg-white text-gray-900";
   const headerClass = isDark ? "sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f1a]/80 border-b border-gray-800" : "sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-gray-200";
@@ -310,10 +235,7 @@ export default function App() {
 
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!menuRef.current) return;
-      if (walletMenuOpen && !menuRef.current.contains(e.target as Node)) setWalletMenuOpen(false);
-    }
+    function onDocClick(e: MouseEvent) { if (!menuRef.current) return; if (walletMenuOpen && !menuRef.current.contains(e.target as Node)) setWalletMenuOpen(false); }
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [walletMenuOpen]);
@@ -331,9 +253,7 @@ export default function App() {
               <div className="h-8 w-8 rounded-xl bg-teal-600 grid place-items-center ring-1 ring-teal-400/50">
                 <Wallet className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold tracking-wide">
-                Wallet<span className={brandAccent}>BuyBack</span>
-              </span>
+              <span className="font-semibold tracking-wide">Wallet<span className={brandAccent}>BuyBack</span></span>
             </div>
 
             <div className="flex items-center gap-3 relative" ref={menuRef}>
@@ -354,7 +274,7 @@ export default function App() {
                     { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom, text: 'Solana' },
                     { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust, text: 'Multi-chain' },
                   ].map((w) => (
-                    <div key={w.name} data-brand={w.name==='MetaMask'?'metamask':w.name==='Phantom'?'phantom':'trust'} className={`rounded-xl p-3 flex items-center gap-2 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <div key={w.name} className={`rounded-xl p-3 flex items-center gap-2 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
                       <div className="h-8 w-8 grid place-items-center rounded-lg" style={{ backgroundColor: w.color + '22' }}>
                         <img src={w.src} alt={w.name} className="h-5 w-5 object-contain" />
                       </div>
@@ -368,11 +288,8 @@ export default function App() {
               )}
 
               <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Быстрая оценка</a></Button></Magnetic>
-              <button
-                aria-label="Toggle theme"
-                onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                className={`h-10 w-10 grid place-items-center rounded-2xl border ${isDark ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-              >
+              <button aria-label="Toggle theme" onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                      className={`h-10 w-10 grid place-items-center rounded-2xl border ${isDark ? 'border-white/15 bg-white/5' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
             </div>
@@ -385,13 +302,7 @@ export default function App() {
         {/* HERO */}
         <section className="relative isolate">
           <div className="mx-auto max-w-7xl px-4 py-14 md:py-24 grid md:grid-cols-2 gap-10 md:gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-20% 0px" }}
-              transition={{ duration: 0.6 }}
-              className="space-y-6"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-20% 0px" }} transition={{ duration: 0.6 }} className="space-y-6">
               <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 ${isDark ? 'bg-white/10 ring-white/15' : 'bg-teal-50 ring-teal-200'}`}>
                 <Sparkles className={`h-4 w-4 ${isDark ? '' : 'text-teal-600'}`} />
                 <span className={`text-xs tracking-wide ${isDark ? 'text-white/80' : 'text-teal-700'}`}>Читабельный минимализм · awwwards стиль</span>
@@ -406,14 +317,11 @@ export default function App() {
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
                   {[{ name: 'MetaMask', color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask }, { name: 'Phantom', color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom }, { name: 'Trust Wallet', color: BRAND_COLORS.trust, src: BRAND_SVGS.trust }].map((w, i) => (
-                    <motion.div
-                      key={w.name}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium shadow cursor-interactive`}
-                      style={{ backgroundColor: w.color, boxShadow: `0 0 22px ${w.color}66` }}
-                      animate={enableFancy ? { y: [0, -3, 0] } : undefined}
-                      transition={{ duration: 4, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
-                      whileHover={enableFancy ? { scale: 1.05, rotate: 0.4 } : undefined}
-                    >
+                    <motion.div key={w.name} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium shadow"
+                                style={{ backgroundColor: w.color, boxShadow: `0 0 22px ${w.color}66` }}
+                                animate={enableFancy ? { y: [0, -3, 0] } : undefined}
+                                transition={{ duration: 4, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+                                whileHover={enableFancy ? { scale: 1.05, rotate: 0.4 } : undefined}>
                       <img src={w.src} alt={w.name} className="h-4 w-4 object-contain drop-shadow" />
                       {w.name}
                     </motion.div>
@@ -429,20 +337,14 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-4">
                 <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Оценить адрес</a></Button></Magnetic>
                 <div className={`text-xs flex items-center gap-2 ${fineText}`}>
-                  <Lock className="h-4 w-4" />
-                  Никогда не делитесь seed-фразой или приватными ключами
+                  <Lock className="h-4 w-4" /> Никогда не делитесь seed-фразой или приватными ключами
                 </div>
               </div>
 
               <ScrollCue />
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-20% 0px" }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-20% 0px" }} transition={{ duration: 0.6, delay: 0.1 }}>
               <TiltCard enabled={enableFancy} className="will-change-transform">
                 <Card className={`${cardChrome} rounded-3xl overflow-hidden shadow-sm`}>
                   <CardHeader>
@@ -463,9 +365,7 @@ export default function App() {
                     <div className="grid gap-2">
                       <Label className={labelColor}>Сеть</Label>
                       <Select value={network} onValueChange={setNetwork}>
-                        <SelectTrigger className={inputChrome}>
-                          <SelectValue placeholder="Выберите сеть" />
-                        </SelectTrigger>
+                        <SelectTrigger className={inputChrome}><SelectValue placeholder="Выберите сеть" /></SelectTrigger>
                         <SelectContent className={`${isDark ? 'bg-[#0b1020] border-white/10 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
                           <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
                           <SelectItem value="solana">Solana / Phantom</SelectItem>
@@ -478,60 +378,28 @@ export default function App() {
                     </div>
                     <div className="grid gap-2">
                       <Label className={labelColor}>Адрес</Label>
-                      <Input
-                        placeholder="0x… или адрес Solana/TON"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className={inputChrome}
-                      />
+                      <Input placeholder="0x… или адрес Solana/TON" value={address} onChange={(e) => setAddress(e.target.value)} className={inputChrome} />
                     </div>
                     <div className="grid gap-2">
                       <Label className={labelColor}>Контакт для связи</Label>
-                      <Input
-                        placeholder="@username / email / телефон"
-                        value={contact}
-                        onChange={(e) => setContact(e.target.value)}
-                        className={inputChrome}
-                      />
+                      <Input placeholder="@username / email / телефон" value={contact} onChange={(e) => setContact(e.target.value)} className={inputChrome} />
                     </div>
                     <div className="grid gap-2">
                       <Label className={labelColor}>Комментарий</Label>
-                      <Textarea
-                        placeholder="Опишите коллекции, ENS, NFT и т.п."
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        className={`${inputChrome} min-h-[96px]`}
-                      />
+                      <Textarea placeholder="Опишите коллекции, ENS, NFT и т.п." value={note} onChange={(e) => setNote(e.target.value)} className={`${inputChrome} min-h-[96px]`} />
                     </div>
                     <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
-                      <input
-                        type="checkbox"
-                        checked={agree}
-                        onChange={(e) => setAgree(e.target.checked)}
-                        className={`mt-1 ${isDark ? 'accent-teal-400' : 'accent-teal-600'}`}
-                      />
-                      <span>
-                        Подтверждаю, что являюсь владельцем адреса и не буду передавать seed-фразы / приватные ключи.
-                      </span>
+                      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className={`mt-1 ${isDark ? 'accent-teal-400' : 'accent-teal-600'}`} />
+                      <span>Подтверждаю, что являюсь владельцем адреса и не буду передавать seed-фразы / приватные ключи.</span>
                     </label>
                   </CardContent>
                   <CardFooter className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className={`text-xs flex items-center gap-2 ${fineText}`}>
-                      <ShieldCheck className="h-4 w-4" />
-                      Выплаты: USDT, USDC, BTC, ETH или локальная валюта
-                    </div>
-                    <Magnetic enabled={enableFancy}><Button onClick={handleSubmit} disabled={!canSubmit} className={buttonPrimary}>
-                      <Send className="mr-2 h-4 w-4" />
-                      Отправить заявку
-                    </Button></Magnetic>
+                    <div className={`text-xs flex items-center gap-2 ${fineText}`}><ShieldCheck className="h-4 w-4" /> Выплаты: USDT, USDC, BTC, ETH или локальная валюта</div>
+                    <Magnetic enabled={enableFancy}><Button onClick={handleSubmit} disabled={!canSubmit} className={buttonPrimary}><Send className="mr-2 h-4 w-4" /> Отправить заявку</Button></Magnetic>
                   </CardFooter>
                 </Card>
               </TiltCard>
-              {submitted && (
-                <div className={`mt-4 text-sm ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>
-                  Спасибо! Мы свяжемся с вами по указанному контакту.
-                </div>
-              )}
+              {submitted && (<div className={`mt-4 text-sm ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>Спасибо! Мы свяжемся с вами по указанному контакту.</div>)}
             </motion.div>
           </div>
         </section>
@@ -557,7 +425,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* HOW IT WORKS — fixed numbers clipping */}
+        {/* HOW IT WORKS — numbers visible, glow clipped inside */}
         <section id="how" className="mx-auto max-w-7xl px-4 py-20">
           <div className="relative hidden md:block mb-12">
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
@@ -579,39 +447,33 @@ export default function App() {
                 whileHover={{ y: -4 }}
                 className={`group relative overflow-visible rounded-3xl p-6 shadow-sm ${cardChrome}`}
               >
-                <div
-                  className="pointer-events-none absolute -inset-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: 'radial-gradient(70rem 70rem at 80% -10%, rgba(45,212,191,.12), transparent 60%)' }}
-                />
-                {/* big number not clipped */}
+                {/* Внутренняя маска = glow строго внутри карточки */}
+                <div className="pointer-events-none absolute inset-0 rounded-3xl overflow-hidden">
+                  <div
+                    className="absolute -inset-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{ background: 'radial-gradient(36rem 24rem at 80% 0%, rgba(45,212,191,.10), transparent 60%)', filter: 'blur(2px)' }}
+                  />
+                </div>
+
+                {/* Большой номер — не обрезается и не задевает соседей */}
                 <div className="pointer-events-none absolute top-2 right-3 z-0 text-[64px] md:text-[88px] lg:text-[104px] font-black leading-[0.9] tracking-tighter text-white/10 select-none">
                   {s.num}
                 </div>
 
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>
-                      {s.icon}
-                    </div>
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? 'bg-white/10' : 'bg-teal-50'}`}>{s.icon}</div>
                     <span className={`text-xs uppercase tracking-wider ${fineText}`}>Шаг {s.num}</span>
                   </div>
-
                   <h4 className="text-xl font-semibold mb-2">{s.title}</h4>
                   <p className={`text-sm leading-relaxed ${fineText}`}>{s.text}</p>
                 </div>
 
-                <motion.span
-                  className="absolute left-6 right-6 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-teal-400/80 to-transparent"
-                  initial={{ scaleX: 0 }}
-                  whileInView={{ scaleX: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, delay: 0.1 }}
-                  style={{ transformOrigin: '0% 50%' }}
-                />
+                <motion.span className="absolute left-6 right-6 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-teal-400/80 to-transparent"
+                             initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }}
+                             transition={{ duration: 0.7, delay: 0.1 }} style={{ transformOrigin: '0% 50%' }} />
 
-                {i < arr.length - 1 && (
-                  <span className="hidden md:block absolute top-16 -right-3 w-6 h-px bg-white/10" />
-                )}
+                {i < arr.length - 1 && (<span className="hidden md:block absolute top-16 -right-3 w-6 h-px bg-white/10" />)}
               </motion.div>
             ))}
           </div>
@@ -633,9 +495,7 @@ export default function App() {
               <div className="grid gap-2">
                 <Label className={labelColor}>Сеть</Label>
                 <Select value={network} onValueChange={setNetwork}>
-                  <SelectTrigger className={inputChrome}>
-                    <SelectValue placeholder="Выберите сеть" />
-                  </SelectTrigger>
+                  <SelectTrigger className={inputChrome}><SelectValue placeholder="Выберите сеть" /></SelectTrigger>
                   <SelectContent className={`${isDark ? 'bg-[#0b1020] border-white/10 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
                     <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
                     <SelectItem value="solana">Solana / Phantom</SelectItem>

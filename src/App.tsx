@@ -519,7 +519,7 @@ export default function App() {
               </div>
               <div className="grid gap-2">
                 <Label className={labelColor}>Комментарий</Label>
-                <Textarea placeholder="Опишите активы (NFT, ENS и др.)" value={note} onChange={(e) => setNote(e.target.value)} className={`${inputChrome} min-h-[96px]`} />
+                <Textarea placeholder="Объясните, почему определённый тип кошелька может быть ценным." value={note} onChange={(e) => setNote(e.target.value)} className={`${inputChrome} min-h-[96px]`} />
               </div>
               <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`} />

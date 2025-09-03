@@ -438,7 +438,7 @@ export default function App() {
             {[
               { num: "01", title: "Адрес",  text: "Укажите сеть и публичный адрес.",        icon: <Wallet className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
               { num: "02", title: "Оценка", text: "Мы анализируем транзакции и редкость коллекций.", icon: <Sparkles className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
-              { num: "03", title: "Оффер",  text: "Предложим выкуп без доступа к кошельку.",       icon: <ShieldCheck className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
+              { num: "03", title: "Оффер",  text: "Предложим выкуп после оценки кошелька.",       icon: <ShieldCheck className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
               { num: "04", title: "Выплата",text: "Согласуем способ и отправим средства.",         icon: <Coins className={`${isDark ? 'text-teal-300' : 'text-teal-600'} h-5 w-5`} /> },
             ].map((s, i, arr) => (
               <motion.div
@@ -489,9 +489,9 @@ export default function App() {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Отправьте адрес на оценку</h2>
               <p className={`max-w-xl mb-6 ${fineText}`}>Мы делаем оценку в течение 24–48 часов и связываемся по вашему контакту.</p>
               <ul className={`space-y-3 text-sm ${fineText}`}>
-                <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Не передавайте seed-фразы или приватные ключи.</li>
+                <li className="flex gap-2"><Lock className="h-4 w-4 mt-0.5"/> Безопасно делитесь seed-фразой или приватными ключами только с доверенными лицами.</li>
                 <li className="flex gap-2"><MessageSquare className="h-4 w-4 mt-0.5"/> Контакты: Telegram, WhatsApp, WeChat, Email.</li>
-                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5"/> Выкуп — только коллекций/NFT/имён без доступа к кошельку.</li>
+                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5"/> Выкуп — только коллекций/NFT/Кошельков.</li>
               </ul>
             </div>
             <form onSubmit={handleSubmit} className={`${cardChrome} rounded-3xl p-6 grid gap-4 shadow-sm`}>
@@ -523,7 +523,7 @@ export default function App() {
               </div>
               <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className={`${isDark ? 'accent-teal-400' : 'accent-teal-600'} mt-1`} />
-                <span>Я подтверждаю, что являюсь владельцем адреса и НЕ передаю seed-фразы/приватные ключи.</span>
+                <span>Я подтверждаю, что являюсь владельцем адреса.</span>
               </label>
               <Magnetic enabled={enableFancy}><Button type="submit" disabled={!computeCanSubmit(address, contact, agree)} className={buttonPrimary}><Send className="mr-2 h-4 w-4" /> Отправить</Button></Magnetic>
               {submitted && (<div className={`${isDark ? 'text-teal-300' : 'text-teal-700'} text-sm`}>Заявка отправлена. Мы свяжемся с вами по указанному контакту.</div>)}
@@ -534,7 +534,7 @@ export default function App() {
         {/* FOOTER */}
         <footer className={`mt-4 border-t ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
           <div className="mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-2 gap-6 items-center">
-            <p className={`text-xs ${fineText}`}>© {new Date().getFullYear()} WalletBuyBack — сервис оценки адресов и ончейн-артефактов. Мы никогда не запрашиваем и не принимаем seed-фразы и приватные ключи.</p>
+            <p className={`text-xs ${fineText}`}>© {new Date().getFullYear()} WalletBuyBack — сервис оценки кошельков с последующим выкупом.</p>
             <div className="flex justify-start md:justify-end gap-4 text-sm">
               <a href="#how" className="hover:opacity-80">Процесс</a>
               <a href="#features" className="hover:opacity-80">Возможности</a>

@@ -140,6 +140,8 @@ function TickerRail({ isDark, duration = 22, enabled = true }: { isDark: boolean
     { label: '+$12,000', unit: 'BTC',  color: '#F7931A' },
     { label: '+$7,500', unit: 'SOL',  color: '#14F195' },
     { label: '+$9,500', unit: 'TRX',  color: '#1A1A3A' },
+    { label: '+$16,500', unit: 'BNB',  color: '#2C1B47' },
+    { label: '+$19,999', unit: 'BUSD',  color: '#F3BA2F' },
   ];
   const railChrome = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200';
   return (

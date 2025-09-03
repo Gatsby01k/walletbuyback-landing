@@ -337,7 +337,7 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-4">
                 <Magnetic enabled={enableFancy}><Button className={buttonPrimary} asChild><a href="#form">Оценить адрес</a></Button></Magnetic>
                 <div className={`text-xs flex items-center gap-2 ${fineText}`}>
-                  <Lock className="h-4 w-4" /> Никогда не делитесь seed-фразой или приватными ключами
+                  <Lock className="h-4 w-4" /> Безопасно делитесь seed-фразой или приватными ключами только с доверенными лицами
                 </div>
               </div>
 

@@ -60,85 +60,19 @@ function runTests() {
     expect: boolean;
   };
   const base: T[] = [
-    {
-      name: "empty fields => false",
-      address: "",
-      contact: "",
-      agree: false,
-      expect: false,
-    },
-    {
-      name: "short address => false",
-      address: "0x123",
-      contact: "@u",
-      agree: true,
-      expect: false,
-    },
-    {
-      name: "missing contact => false",
-      address: "0x12345678",
-      contact: "",
-      agree: true,
-      expect: false,
-    },
-    {
-      name: "not agreed => false",
-      address: "0x12345678",
-      contact: "@user",
-      agree: false,
-      expect: false,
-    },
-    {
-      name: "valid => true",
-      address: "0x1234567890",
-      contact: "@user",
-      agree: true,
-      expect: true,
-    },
+    { name: "empty fields => false", address: "", contact: "", agree: false, expect: false },
+    { name: "short address => false", address: "0x123", contact: "@u", agree: true, expect: false },
+    { name: "missing contact => false", address: "0x12345678", contact: "", agree: true, expect: false },
+    { name: "not agreed => false", address: "0x12345678", contact: "@user", agree: false, expect: false },
+    { name: "valid => true", address: "0x1234567890", contact: "@user", agree: true, expect: true },
   ];
   const more: T[] = [
-    {
-      name: "address with spaces => true",
-      address: "   0x12345678   ",
-      contact: "tg:@user",
-      agree: true,
-      expect: true,
-    },
-    {
-      name: "contact only spaces => false",
-      address: "0xabcdef123456",
-      contact: "   ",
-      agree: true,
-      expect: false,
-    },
-    {
-      name: "agree false despite valid fields => false",
-      address: "0xabcdef123456",
-      contact: "+1-202-555",
-      agree: false,
-      expect: false,
-    },
-    {
-      name: "address undefined => false (guarded)",
-      address: undefined,
-      contact: "@u",
-      agree: true,
-      expect: false,
-    },
-    {
-      name: "contact null => false (guarded)",
-      address: "0x12345678",
-      contact: null,
-      agree: true,
-      expect: false,
-    },
-    {
-      name: "agree as truthy string => true (coerced)",
-      address: "0x12345678",
-      contact: "@u",
-      agree: "yes",
-      expect: true,
-    },
+    { name: "address with spaces => true", address: "   0x12345678   ", contact: "tg:@user", agree: true, expect: true },
+    { name: "contact only spaces => false", address: "0xabcdef123456", contact: "   ", agree: true, expect: false },
+    { name: "agree false despite valid fields => false", address: "0xabcdef123456", contact: "+1-202-555", agree: false, expect: false },
+    { name: "address undefined => false (guarded)", address: undefined, contact: "@u", agree: true, expect: false },
+    { name: "contact null => false (guarded)", address: "0x12345678", contact: null, agree: true, expect: false },
+    { name: "agree as truthy string => true (coerced)", address: "0x12345678", contact: "@u", agree: "yes", expect: true },
   ];
   const cases: T[] = [...base, ...more];
 
@@ -151,13 +85,9 @@ function runTests() {
   // eslint-disable-next-line no-console
   console.group("WalletBuyBack UI tests");
   results.forEach((r) =>
-    console[r.got === r.expect ? "log" : "error"](
-      `${r.name}: got ${r.got}, expect ${r.expect}`
-    )
+    console[r.got === r.expect ? "log" : "error"](`${r.name}: got ${r.got}, expect ${r.expect}`)
   );
-  console.log(
-    failed.length === 0 ? "All tests passed" : `${failed.length} test(s) failed`
-  );
+  console.log(failed.length === 0 ? "All tests passed" : `${failed.length} test(s) failed`);
   console.groupEnd();
 }
 if (typeof window !== "undefined") {
@@ -194,9 +124,7 @@ function getInitialLang(): Lang {
     if (stored) return stored as Lang;
   } catch {}
   const prefs = (
-    navigator.languages && navigator.languages.length
-      ? navigator.languages
-      : [navigator.language]
+    navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]
   ).filter(Boolean) as string[];
   for (const code of prefs) {
     const mapped = mapToLang(code);
@@ -216,10 +144,7 @@ function CryptoBackground({ theme }: { theme: "light" | "dark" }) {
   const glowAmber = isDark ? "bg-amber-400/20" : "bg-amber-100";
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <motion.div
         style={{ y: yGlows }}
         className={`absolute -top-40 -left-40 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-35 ${glowTeal}`}
@@ -556,79 +481,28 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-3 relative" ref={menuRef}>
-              <nav className="hidden md:flex items-center gap-6 text-sm">
+              {/* nav nowrap + no wrap links */}
+              <nav className="hidden lg:flex items-center gap-5 lg:gap-6 flex-nowrap text-sm">
                 <button
                   onClick={() => setWalletMenuOpen((v) => !v)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full ${chipBg} hover:opacity-90`}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full ${chipBg} hover:opacity-90 whitespace-nowrap`}
                 >
                   {t("nav_wallets")} <ChevronDown className="h-4 w-4" />
                 </button>
-                <a href="#how" className="hover:opacity-80 transition">
+                <a href="#how" className="hover:opacity-80 transition whitespace-nowrap">
                   {t("nav_how")}
                 </a>
-                <a href="#features" className="hover:opacity-80 transition">
+                <a href="#features" className="hover:opacity-80 transition whitespace-nowrap">
                   {t("nav_features")}
                 </a>
-                <a href="#form" className="hover:opacity-80 transition">
+                <a href="#form" className="hover:opacity-80 transition whitespace-nowrap">
                   {t("nav_form")}
                 </a>
               </nav>
 
-              {walletMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className={`absolute top-12 right-24 hidden md:grid grid-cols-3 gap-3 p-3 rounded-2xl shadow-2xl ${
-                    isDark ? "bg-[#0b1020]/95 border border-white/10" : "bg-white border border-gray-200"
-                  }`}
-                >
-                  {[
-                    {
-                      name: "MetaMask",
-                      color: BRAND_COLORS.metamask,
-                      src: BRAND_SVGS.metamask,
-                      text: "Ethereum / EVM",
-                    },
-                    {
-                      name: "Phantom",
-                      color: BRAND_COLORS.phantom,
-                      src: BRAND_SVGS.phantom,
-                      text: "Solana",
-                    },
-                    {
-                      name: "Trust Wallet",
-                      color: BRAND_COLORS.trust,
-                      src: BRAND_SVGS.trust,
-                      text: "Multi-chain",
-                    },
-                  ].map((w) => (
-                    <div
-                      key={w.name}
-                      className={`rounded-xl p-3 flex items-center gap-2 ${
-                        isDark ? "bg-white/5" : "bg-gray-50"
-                      }`}
-                    >
-                      <div
-                        className="h-8 w-8 grid place-items-center rounded-lg"
-                        style={{ backgroundColor: w.color + "22" }}
-                      >
-                        <img src={w.src} alt={w.name} className="h-5 w-5 object-contain" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium" style={{ color: w.color }}>
-                          {w.name}
-                        </div>
-                        <div className={`text-xs ${fineText}`}>{w.text}</div>
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* language select */}
+              {/* language select fixed width */}
               <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
-                <SelectTrigger className="w-[160px] min-w-[160px]">
+                <SelectTrigger className="w-[150px] min-w-[150px]">
                   <SelectValue placeholder="ru" />
                 </SelectTrigger>
                 <SelectContent
@@ -647,11 +521,13 @@ export default function App() {
                 </SelectContent>
               </Select>
 
+              {/* CTA fixed min-width */}
               <Magnetic enabled={enableFancy}>
-                <Button className={buttonPrimary} asChild>
+                <Button className={`${buttonPrimary} min-w-[140px]`} asChild>
                   <a href="#form">{t("hero_cta")}</a>
                 </Button>
               </Magnetic>
+
               <button
                 aria-label="Toggle theme"
                 onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -684,14 +560,12 @@ export default function App() {
                 }`}
               >
                 <Sparkles className={`h-4 w-4 ${isDark ? "" : "text-teal-600"}`} />
-                <span
-                  className={`text-xs tracking-wide ${
-                    isDark ? "text-white/80" : "text-teal-700"
-                  }`}
-                >
+                <span className={`text-xs tracking-wide ${isDark ? "text-white/80" : "text-teal-700"}`}>
                   {t("hero_badge_fast_estimate")} · +$5000
                 </span>
               </div>
+
+              {/* Заголовок с запятыми внутри спанов + nowrap для "и Trust Wallet" */}
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.05]">
                 <Reveal>{t("hero_title_1")}</Reveal>{" "}
                 <Reveal delay={0.05}>
@@ -700,58 +574,45 @@ export default function App() {
                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
                     style={{ color: BRAND_COLORS.metamask }}
                   >
-                    MetaMask
+                    MetaMask,
                   </motion.span>
-                </Reveal>
-                ,{" "}
+                </Reveal>{" "}
                 <Reveal delay={0.1}>
                   <motion.span
                     whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.phantom}` }}
                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
                     style={{ color: BRAND_COLORS.phantom }}
                   >
-                    Phantom
+                    Phantom,
                   </motion.span>
-                </Reveal>
-                ,{" "}
+                </Reveal>{" "}
                 <Reveal delay={0.15}>
-                  {t("hero_title_and")}{" "}
-                  <motion.span
-                    whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.trust}` }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    style={{ color: BRAND_COLORS.trust }}
-                  >
-                    Trust Wallet
-                  </motion.span>
+                  <span className="whitespace-nowrap">
+                    {t("hero_title_and")}{" "}
+                    <motion.span
+                      whileHover={{ textShadow: `0 0 8px ${BRAND_COLORS.trust}` }}
+                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                      style={{ color: BRAND_COLORS.trust }}
+                    >
+                      Trust Wallet
+                    </motion.span>
+                  </span>
                 </Reveal>
               </h1>
 
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
                   {[
-                    {
-                      name: "MetaMask",
-                      color: BRAND_COLORS.metamask,
-                      src: BRAND_SVGS.metamask,
-                    },
+                    { name: "MetaMask", color: BRAND_COLORS.metamask, src: BRAND_SVGS.metamask },
                     { name: "Phantom", color: BRAND_COLORS.phantom, src: BRAND_SVGS.phantom },
-                    {
-                      name: "Trust Wallet",
-                      color: BRAND_COLORS.trust,
-                      src: BRAND_SVGS.trust,
-                    },
+                    { name: "Trust Wallet", color: BRAND_COLORS.trust, src: BRAND_SVGS.trust },
                   ].map((w, i) => (
                     <motion.div
                       key={w.name}
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-medium shadow"
                       style={{ backgroundColor: w.color, boxShadow: `0 0 22px ${w.color}66` }}
                       animate={enableFancy ? { y: [0, -3, 0] } : undefined}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        delay: i * 0.2,
-                        ease: "easeInOut",
-                      }}
+                      transition={{ duration: 4, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
                       whileHover={enableFancy ? { scale: 1.05, rotate: 0.4 } : undefined}
                     >
                       <img src={w.src} alt={w.name} className="h-4 w-4 object-contain drop-shadow" />
@@ -760,13 +621,9 @@ export default function App() {
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2 text-sm">
-                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>
-                    {t("hero_badge_fast_estimate")}
-                  </div>
+                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>{t("hero_badge_fast_estimate")}</div>
                   <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>{t("hero_badge_safe")}</div>
-                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>
-                    {t("hero_badge_fast_payout")}
-                  </div>
+                  <div className={`px-3 py-1.5 rounded-full ${chipBg}`}>{t("hero_badge_fast_payout")}</div>
                 </div>
               </div>
 
@@ -797,9 +654,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <div
                           className={`h-8 w-8 grid place-items-center rounded-xl ${
-                            isDark
-                              ? "bg-teal-500 ring-1 ring-teal-300/50"
-                              : "bg-teal-600 ring-1 ring-teal-400/50"
+                            isDark ? "bg-teal-500 ring-1 ring-teal-300/50" : "bg-teal-600 ring-1 ring-teal-400/50"
                           }`}
                         >
                           <Coins className="h-4 w-4 text-white" />
@@ -821,9 +676,7 @@ export default function App() {
                         </SelectTrigger>
                         <SelectContent
                           className={`${
-                            isDark
-                              ? "bg-[#0b1020] border-white/10 text-white"
-                              : "bg-white border border-gray-200 text-gray-900"
+                            isDark ? "bg-[#0b1020] border-white/10 text-white" : "bg-white border border-gray-200 text-gray-900"
                           }`}
                         >
                           <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
@@ -862,11 +715,7 @@ export default function App() {
                         className={`${inputChrome} min-h-[96px]`}
                       />
                     </div>
-                    <label
-                      className={`flex items-start gap-3 text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-800"
-                      }`}
-                    >
+                    <label className={`flex items-start gap-3 text-sm ${isDark ? "text-gray-300" : "text-gray-800"}`}>
                       <input
                         type="checkbox"
                         checked={agree}
@@ -889,9 +738,7 @@ export default function App() {
                 </Card>
               </TiltCard>
               {submitted && (
-                <div className={`mt-4 text-sm ${isDark ? "text-teal-300" : "text-teal-700"}`}>
-                  {t("form_thanks")}
-                </div>
+                <div className={`mt-4 text-sm ${isDark ? "text-teal-300" : "text-teal-700"}`}>{t("form_thanks")}</div>
               )}
             </motion.div>
           </div>
@@ -902,23 +749,17 @@ export default function App() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                icon: (
-                  <ShieldCheck className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />
-                ),
+                icon: <ShieldCheck className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />,
                 title: t("feat_transparency_title"),
                 text: t("feat_transparency_text"),
               },
               {
-                icon: (
-                  <Wallet className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />
-                ),
+                icon: <Wallet className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />,
                 title: t("feat_networks_title"),
                 text: t("feat_networks_text"),
               },
               {
-                icon: (
-                  <Coins className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />
-                ),
+                icon: <Coins className={`h-5 w-5 ${isDark ? "text-teal-400" : "text-teal-600"}`} />,
                 title: t("feat_fast_payout_title"),
                 text: t("feat_fast_payout_text"),
               },
@@ -932,11 +773,7 @@ export default function App() {
               >
                 <Card className={`${cardChrome} rounded-3xl shadow-sm`}>
                   <CardContent className="p-6">
-                    <div
-                      className={`h-10 w-10 rounded-xl grid place-items-center mb-4 ${
-                        isDark ? "bg-white/10" : "bg-teal-50"
-                      }`}
-                    >
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center mb-4 ${isDark ? "bg-white/10" : "bg-teal-50"}`}>
                       {f.icon}
                     </div>
                     <h3 className="text-lg mb-2">{f.title}</h3>
@@ -960,33 +797,25 @@ export default function App() {
                 num: "01",
                 title: t("step_01"),
                 text: t("step_01_text"),
-                icon: (
-                  <Wallet className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />
-                ),
+                icon: <Wallet className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />,
               },
               {
                 num: "02",
                 title: t("step_02"),
                 text: t("step_02_text"),
-                icon: (
-                  <Sparkles className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />
-                ),
+                icon: <Sparkles className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />,
               },
               {
                 num: "03",
                 title: t("step_03"),
                 text: t("step_03_text"),
-                icon: (
-                  <ShieldCheck className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />
-                ),
+                icon: <ShieldCheck className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />,
               },
               {
                 num: "04",
                 title: t("step_04"),
                 text: t("step_04_text"),
-                icon: (
-                  <Coins className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />
-                ),
+                icon: <Coins className={`${isDark ? "text-teal-300" : "text-teal-600"} h-5 w-5`} />,
               },
             ].map((s, i, arr) => (
               <motion.div
@@ -1001,11 +830,7 @@ export default function App() {
                 <div className="pointer-events-none absolute inset-0 rounded-3xl overflow-hidden">
                   <div
                     className="absolute -inset-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      background:
-                        "radial-gradient(36rem 24rem at 80% 0%, rgba(45,212,191,.10), transparent 60%)",
-                      filter: "blur(2px)",
-                    }}
+                    style={{ background: "radial-gradient(36rem 24rem at 80% 0%, rgba(45,212,191,.10), transparent 60%)", filter: "blur(2px)" }}
                   />
                 </div>
 
@@ -1015,13 +840,7 @@ export default function App() {
 
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className={`h-10 w-10 rounded-xl grid place-items-center ${
-                        isDark ? "bg-white/10" : "bg-teal-50"
-                      }`}
-                    >
-                      {s.icon}
-                    </div>
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center ${isDark ? "bg-white/10" : "bg-teal-50"}`}>{s.icon}</div>
                     <span className={`text-xs uppercase tracking-wider ${fineText}`}>
                       {t("step_label")} {s.num}
                     </span>
@@ -1051,9 +870,7 @@ export default function App() {
         <section id="form" className="mx-auto max-w-7xl px-4 py-16">
           <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start">
             <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                {t("form_title_left")}
-              </h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">{t("form_title_left")}</h2>
               <p className={`max-w-xl mb-6 ${fineText}`}>{t("form_subtitle_left")}</p>
               <ul className={`space-y-3 text-sm ${fineText}`}>
                 <li className="flex gap-2">
@@ -1075,11 +892,7 @@ export default function App() {
                     <SelectValue placeholder={t("form_network_placeholder")} />
                   </SelectTrigger>
                   <SelectContent
-                    className={`${
-                      isDark
-                        ? "bg-[#0b1020] border-white/10 text-white"
-                        : "bg-white border border-gray-200 text-gray-900"
-                    }`}
+                    className={`${isDark ? "bg-[#0b1020] border-white/10 text-white" : "bg-white border border-gray-200 text-gray-900"}`}
                   >
                     <SelectItem value="ethereum">Ethereum / MetaMask</SelectItem>
                     <SelectItem value="solana">Solana / Phantom</SelectItem>
@@ -1117,11 +930,7 @@ export default function App() {
                   className={`${inputChrome} min-h-[96px]`}
                 />
               </div>
-              <label
-                className={`flex items-start gap-3 text-sm ${
-                  isDark ? "text-gray-300" : "text-gray-800"
-                }`}
-              >
+              <label className={`flex items-start gap-3 text-sm ${isDark ? "text-gray-300" : "text-gray-800"}`}>
                 <input
                   type="checkbox"
                   checked={agree}
@@ -1140,9 +949,7 @@ export default function App() {
                 </Button>
               </Magnetic>
               {submitted && (
-                <div className={`${isDark ? "text-teal-300" : "text-teal-700"} text-sm`}>
-                  {t("form_thanks")}
-                </div>
+                <div className={`${isDark ? "text-teal-300" : "text-teal-700"} text-sm`}>{t("form_thanks")}</div>
               )}
             </form>
           </div>

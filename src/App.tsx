@@ -305,7 +305,7 @@ export default function App() {
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-20% 0px" }} transition={{ duration: 0.6 }} className="space-y-6">
               <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 ${isDark ? 'bg-white/10 ring-white/15' : 'bg-teal-50 ring-teal-200'}`}>
                 <Sparkles className={`h-4 w-4 ${isDark ? '' : 'text-teal-600'}`} />
-                <span className={`text-xs tracking-wide ${isDark ? 'text-white/80' : 'text-teal-700'}`}>Читабельный минимализм · awwwards стиль</span>
+                <span className={`text-xs tracking-wide ${isDark ? 'text-white/80' : 'text-teal-700'}`}>Продал кошелек · Заработал $5000</span>
               </div>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.05]">
                 <Reveal>Выкупим Ваш Кошелек</Reveal>{' '}
